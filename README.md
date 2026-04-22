@@ -28,10 +28,25 @@ The installer verifies dependencies, installs the scripts, registers systemd uni
 | `omarchy-prayer refresh`       | re-run the scheduler                           |
 | `omarchy-prayer mute-today`    | toggle today-only mute flag                    |
 | `omarchy-prayer-stop`          | kill any playing adhan                         |
+| `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
 
 ## Configuration
 
 Edit `~/.config/omarchy-prayer/config.toml` — the installer seeds it on first run via IP geolocation. See `docs/superpowers/specs/2026-04-22-omarchy-prayer-design.md` for all options.
+
+## Adhan library
+
+A curated catalog of 17 Sunni adhans (Makkah, Madinah, Al-Aqsa, Egypt, Halab, plus classical reciters) is bundled via praytimes.org.
+
+```bash
+omarchy-prayer adhans list                # show catalog + which are downloaded
+omarchy-prayer adhans download makkah     # fetch the Makkah adhan
+omarchy-prayer adhans set makkah          # use Makkah as the standard adhan
+omarchy-prayer adhans set madinah --fajr  # use Madinah for Fajr specifically
+omarchy-prayer adhans current             # show currently configured paths
+```
+
+Downloaded files live at `~/.local/share/omarchy-prayer/adhans/<key>.mp3`. `set` rewrites only the matching `adhan = "..."` / `adhan_fajr = "..."` line in your config, leaving everything else untouched.
 
 ## Manual verification checklist
 

@@ -46,6 +46,39 @@ def cmd_tui
   OmarchyPrayer::TUI.new.run
 end
 
+def cmd_adhans(argv)
+  require 'omarchy_prayer/adhan_manager'
+  require 'omarchy_prayer/adhan_catalog'
+  sub = argv.shift
+  case sub
+  when nil, 'list'
+    entries = OmarchyPrayer::AdhanManager.list
+    col_key = entries.map { |e| e[:key].length }.max
+    col_lbl = entries.map { |e| e[:label].length }.max
+    entries.each do |e|
+      flag = e[:downloaded] ? '●' : '○'
+      puts format("  %s  %-#{col_key}s  %-#{col_lbl}s", flag, e[:key], e[:label])
+    end
+    puts
+    puts '  ● = downloaded    ○ = not downloaded'
+    puts '  download:  omarchy-prayer adhans download <key>'
+    puts '  set:       omarchy-prayer adhans set <key> [--fajr]'
+  when 'download'
+    key = argv.shift or abort 'usage: omarchy-prayer adhans download <key>'
+    OmarchyPrayer::AdhanManager.download(key)
+  when 'set'
+    key = argv.shift or abort 'usage: omarchy-prayer adhans set <key> [--fajr]'
+    fajr = argv.include?('--fajr')
+    OmarchyPrayer::AdhanManager.set(key, fajr: fajr)
+  when 'current'
+    cur = OmarchyPrayer::AdhanManager.current
+    puts "adhan       #{cur[:adhan] || '(unset)'}"
+    puts "adhan_fajr  #{cur[:adhan_fajr] || '(unset)'}"
+  else
+    abort "unknown adhans subcommand: #{sub.inspect}"
+  end
+end
+
 case ARGV[0]
 when nil, 'tui'   then cmd_tui
 when 'today'      then cmd_today
@@ -53,8 +86,20 @@ when 'next'       then cmd_next
 when 'status'     then cmd_status
 when 'refresh'    then cmd_refresh
 when 'mute-today' then cmd_mute_today
+when 'adhans'     then cmd_adhans(ARGV[1..] || [])
 when '-h', '--help', 'help'
-  puts 'usage: omarchy-prayer [tui|today|next|status|refresh|mute-today]'
+  puts <<~USAGE
+    usage: omarchy-prayer [command]
+
+    commands:
+      tui           open the TUI (default)
+      today         print today's prayer times
+      next          print next prayer name + time
+      status        print source/method/city/hijri line
+      refresh       re-run the scheduler
+      mute-today    toggle today-only mute flag
+      adhans        manage adhan audio library (list|download|set|current)
+  USAGE
 else
   warn "unknown subcommand: #{ARGV[0].inspect}"
   exit 1
