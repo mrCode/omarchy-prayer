@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily rebuild of omarchy-prayer timers
+
+[Timer]
+OnCalendar=*-*-* 00:01:00
+Persistent=true
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
