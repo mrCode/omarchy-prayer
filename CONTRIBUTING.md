@@ -5,7 +5,7 @@ Thanks for your interest. This project is a Muslim prayer-time notifier for Omar
 ## Development setup
 
 ```bash
-git clone https://github.com/baljedai/omarchy-prayer.git
+git clone https://github.com/mrCode/omarchy-prayer.git
 cd omarchy-prayer
 bundle install
 bundle exec rake test
