@@ -334,3 +334,4 @@ The installer verifies each runtime dependency on install and prints a clear rem
 - Mosque-finder integration.
 - Support for multiple saved locations with a quick switcher.
 - Packaging as an AUR package — ship as a self-install script for now; AUR can come after the design stabilizes.
+- TUI settings form: v1 opens a read-only screen that points at the config file; in-TUI field editing is a later pass.
