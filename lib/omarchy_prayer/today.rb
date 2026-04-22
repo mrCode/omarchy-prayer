@@ -7,13 +7,14 @@ module OmarchyPrayer
   class Today
     ORDER = %i[fajr dhuhr asr maghrib isha].freeze
 
-    attr_reader :date, :tz_offset, :city, :country, :method, :source, :times
+    attr_reader :date, :tz_offset, :city, :country, :method, :source, :times, :hijri
 
-    def initialize(date:, tz_offset:, city:, country:, method:, source:, times:)
+    def initialize(date:, tz_offset:, city:, country:, method:, source:, times:, hijri: nil)
       @date = date; @tz_offset = tz_offset
       @city = city; @country = country
       @method = method; @source = source
       @times = symbolize(times)
+      @hijri = hijri
     end
 
     def self.read(path = Paths.today_json)
@@ -22,7 +23,7 @@ module OmarchyPrayer
         date: data['date'], tz_offset: data['tz_offset'],
         city: data['city'], country: data['country'],
         method: data['method'], source: data['source'],
-        times: data['times']
+        times: data['times'], hijri: data['hijri']
       )
     end
 
@@ -31,7 +32,7 @@ module OmarchyPrayer
       File.write(path, JSON.pretty_generate(
         date: @date, tz_offset: @tz_offset, city: @city, country: @country,
         method: @method, source: @source,
-        times: @times.transform_keys(&:to_s)
+        times: @times.transform_keys(&:to_s), hijri: @hijri
       ))
     end
 

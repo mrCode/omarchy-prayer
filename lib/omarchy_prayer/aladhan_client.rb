@@ -43,6 +43,12 @@ module OmarchyPrayer
       parsed['data'].each do |entry|
         date_key = reformat_date(entry.dig('date', 'gregorian', 'date'))
         days[date_key] = strip_timings(entry['timings'])
+        if (h = entry.dig('date', 'hijri'))
+          m = h.dig('month', 'en')
+          if h['day'] && m && h['year']
+            days[date_key]['hijri'] = "#{h['day']} #{m} #{h['year']}"
+          end
+        end
       end
       write_cache(year: year, month: month, days: days)
       days

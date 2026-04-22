@@ -20,7 +20,9 @@ end
 
 def cmd_status
   t = OmarchyPrayer::Today.read
-  puts "date #{t.date}  source #{t.source}  method #{t.method}  city #{t.city}"
+  line = "date #{t.date}  source #{t.source}  method #{t.method}  city #{t.city}"
+  line += "  hijri #{t.hijri}" if t.hijri
+  puts line
 end
 
 def cmd_refresh

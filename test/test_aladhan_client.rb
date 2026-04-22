@@ -35,6 +35,7 @@ class TestAladhanClient < Minitest::Test
       entry = days['2026-04-22']
       assert_equal '04:14', entry['fajr']
       assert_equal '19:22', entry['isha']
+      assert_equal '5 Dhū al-Qaʿdah 1447', entry['hijri']
     end
   end
 

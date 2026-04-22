@@ -66,6 +66,7 @@ module OmarchyPrayer
     def render_header
       center bold + fg(:accent) + 'OMARCHY  PRAYER' + rst
       center fg(:muted) + "#{@cfg.city}, #{@cfg.country}     #{dot}     #{@today.date}" + rst
+      center fg(:muted) + @today.hijri + rst if @today.hijri
     end
 
     def render_next_card(name, at, now)

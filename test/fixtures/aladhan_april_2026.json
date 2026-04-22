@@ -11,7 +11,17 @@
         "Maghrib": "18:01 (+03)",
         "Isha": "19:21 (+03)"
       },
-      "date": { "readable": "01 Apr 2026", "gregorian": { "date": "01-04-2026" } }
+      "date": {
+        "readable": "01 Apr 2026",
+        "gregorian": { "date": "01-04-2026" },
+        "hijri": {
+          "date": "14-10-1447",
+          "day": "14",
+          "month": { "en": "Shawwāl" },
+          "year": "1447",
+          "weekday": { "en": "Al Arba'a" }
+        }
+      }
     },
     {
       "timings": {
@@ -22,7 +32,17 @@
         "Maghrib": "18:02 (+03)",
         "Isha": "19:22 (+03)"
       },
-      "date": { "readable": "22 Apr 2026", "gregorian": { "date": "22-04-2026" } }
+      "date": {
+        "readable": "22 Apr 2026",
+        "gregorian": { "date": "22-04-2026" },
+        "hijri": {
+          "date": "05-11-1447",
+          "day": "5",
+          "month": { "en": "Dhū al-Qaʿdah" },
+          "year": "1447",
+          "weekday": { "en": "Al Arba'a" }
+        }
+      }
     }
   ]
 }

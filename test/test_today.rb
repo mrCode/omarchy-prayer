@@ -21,6 +21,35 @@ class TestToday < Minitest::Test
     end
   end
 
+  def test_hijri_roundtrips
+    with_isolated_home do
+      today = OmarchyPrayer::Today.new(
+        date: '2026-04-22', tz_offset: 10800, city: 'Riyadh', country: 'SA',
+        method: 'Makkah', source: 'api',
+        times: { fajr: '04:15', sunrise: '05:35', dhuhr: '11:48',
+                 asr: '15:18', maghrib: '18:01', isha: '19:21' },
+        hijri: '5 Dhū al-Qaʿdah 1447'
+      )
+      today.write
+      loaded = OmarchyPrayer::Today.read
+      assert_equal '5 Dhū al-Qaʿdah 1447', loaded.hijri
+    end
+  end
+
+  def test_hijri_nil_when_absent
+    with_isolated_home do
+      today = OmarchyPrayer::Today.new(
+        date: '2026-04-22', tz_offset: 10800, city: 'Riyadh', country: 'SA',
+        method: 'Makkah', source: 'offline',
+        times: { fajr: '04:15', sunrise: '05:35', dhuhr: '11:48',
+                 asr: '15:18', maghrib: '18:01', isha: '19:21' }
+      )
+      today.write
+      loaded = OmarchyPrayer::Today.read
+      assert_nil loaded.hijri
+    end
+  end
+
   def test_next_prayer_selects_first_future
     times = { fajr: '04:15', sunrise: '05:35', dhuhr: '11:48',
               asr: '15:18', maghrib: '18:01', isha: '19:21' }

@@ -51,9 +51,10 @@ cfg.offsets.each do |prayer, minutes|
   day[prayer.to_s] = t.strftime('%H:%M')
 end
 
+hijri = day.delete('hijri')
 today = OmarchyPrayer::Today.new(
   date: key, tz_offset: tz, city: cfg.city, country: cfg.country,
-  method: method, source: source, times: day
+  method: method, source: source, times: day, hijri: hijri
 )
 today.write
 
