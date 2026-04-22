@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+
+require 'omarchy_prayer/config'
+require 'omarchy_prayer/today'
+require 'omarchy_prayer/waybar'
+
+begin
+  cfg = OmarchyPrayer::Config.load
+  t   = OmarchyPrayer::Today.read
+  puts OmarchyPrayer::Waybar.render(t, format: cfg.waybar_format,
+                                     soon_minutes: cfg.soon_threshold_minutes)
+rescue StandardError => e
+  require 'json'
+  puts JSON.generate(text: '', tooltip: "omarchy-prayer: #{e.message}", class: 'prayer-error')
+end

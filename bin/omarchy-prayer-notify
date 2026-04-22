@@ -1,0 +1,22 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+
+require 'omarchy_prayer/config'
+require 'omarchy_prayer/today'
+require 'omarchy_prayer/notifier'
+
+prayer = ARGV[0]&.downcase&.to_sym
+event  = ARGV[1]
+abort 'usage: omarchy-prayer-notify <prayer> <on-time|pre>' unless prayer && %w[on-time pre].include?(event)
+
+cfg   = OmarchyPrayer::Config.load
+today = OmarchyPrayer::Today.read
+
+OmarchyPrayer::Notifier.new(
+  today: today,
+  respect_silencing: cfg.respect_silencing,
+  audio_enabled: cfg.audio_enabled,
+  audio_player: cfg.audio_player, volume: cfg.volume,
+  adhan: cfg.adhan_path, adhan_fajr: cfg.adhan_fajr_path,
+  pre_notify_minutes: cfg.pre_notify_minutes
+).fire(prayer: prayer, event: event)

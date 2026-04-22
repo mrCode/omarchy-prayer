@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+
+require 'date'
+require 'omarchy_prayer/config'
+require 'omarchy_prayer/country_methods'
+require 'omarchy_prayer/today'
+require 'omarchy_prayer/times_source'
+require 'omarchy_prayer/aladhan_client'
+require 'omarchy_prayer/offline_calc'
+require 'omarchy_prayer/scheduler'
+require 'omarchy_prayer/first_run'
+
+def resolve_method(cfg)
+  cfg.method_name == 'auto' ? OmarchyPrayer::CountryMethods.resolve(cfg.country) : cfg.method_name
+end
+
+def tz_offset_seconds
+  Time.now.utc_offset
+end
+
+OmarchyPrayer::FirstRun.ensure_config!
+cfg    = OmarchyPrayer::Config.load
+method = resolve_method(cfg)
+date   = Date.today
+key    = date.strftime('%Y-%m-%d')
+tz     = tz_offset_seconds
+
+offline_fallback = ->(day:, lat:, lon:, method_name:, tz_offset:) {
+  times = OmarchyPrayer::OfflineCalc.compute(
+    date: Date.parse(day), lat: lat, lon: lon, method: method_name, tz_offset: tz_offset
+  )
+  times.each_with_object({}) { |(k, t), h| h[k.to_s] = t.strftime('%H:%M') }
+}
+
+client = OmarchyPrayer::AladhanClient.new(
+  base_url: ENV['OMARCHY_PRAYER_ALADHAN_BASE'] || OmarchyPrayer::AladhanClient::DEFAULT_BASE
+)
+source, day = OmarchyPrayer::TimesSource.new(client: client).resolve(
+  year: date.year, month: date.month, day: key,
+  lat: cfg.latitude, lon: cfg.longitude, method_name: method,
+  tz_offset: tz, offline_fallback: offline_fallback
+)
+
+# Apply per-prayer offsets.
+cfg.offsets.each do |prayer, minutes|
+  next if minutes.zero?
+  next unless day[prayer.to_s]
+  h, m = day[prayer.to_s].split(':').map(&:to_i)
+  t = Time.new(date.year, date.month, date.day, h, m, 0, tz) + minutes * 60
+  day[prayer.to_s] = t.strftime('%H:%M')
+end
+
+today = OmarchyPrayer::Today.new(
+  date: key, tz_offset: tz, city: cfg.city, country: cfg.country,
+  method: method, source: source, times: day
+)
+today.write
+
+# Clear stale mute-today from yesterday.
+File.delete(OmarchyPrayer::Paths.mute_today) if File.exist?(OmarchyPrayer::Paths.mute_today)
+
+OmarchyPrayer::Scheduler.new.rebuild(today, pre_minutes: cfg.pre_notify_minutes)
+
+puts "omarchy-prayer: scheduled #{today.times.size} prayers for #{key} (#{source}, #{method})"
