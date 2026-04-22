@@ -11,11 +11,68 @@ Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
 
 ## Install
 
+### Arch / Omarchy — from AUR (recommended)
+
 ```bash
+yay -S omarchy-prayer        # or: paru -S omarchy-prayer
+```
+
+Then enable the scheduler + resume hook and open the TUI to bootstrap:
+
+```bash
+systemctl --user enable --now omarchy-prayer-schedule.timer
+systemctl --user enable omarchy-prayer-resume.service
+omarchy-prayer adhans download makkah      # or any other from `omarchy-prayer adhans list`
+omarchy-prayer adhans set makkah
+omarchy-prayer                             # first-run auto-detects location
+```
+
+### Arch — manually (without an AUR helper)
+
+```bash
+git clone https://aur.archlinux.org/omarchy-prayer.git
+cd omarchy-prayer
+makepkg -si
+```
+
+### From source (any distro with Hyprland + mako + waybar)
+
+```bash
+git clone https://github.com/mrCode/omarchy-prayer.git
+cd omarchy-prayer
 ./install.sh
 ```
 
-The installer verifies dependencies, installs the scripts, registers systemd units, and runs the initial schedule. Follow the "next steps" it prints to wire up the waybar widget and optional Hyprland keybind.
+`install.sh` verifies dependencies, installs the scripts to `~/.local/bin/`, registers `systemd --user` units, and runs the initial schedule. It prints "next steps" for wiring up the waybar widget and an optional Hyprland keybind.
+
+### Waybar widget
+
+Add this module to `~/.config/waybar/config.jsonc` and put `"custom/prayer"` in your `modules-right`:
+
+```jsonc
+"custom/prayer": {
+  "exec": "omarchy-prayer-waybar",
+  "interval": 30,
+  "return-type": "json",
+  "on-click": "alacritty -e omarchy-prayer",
+  "on-click-right": "omarchy-prayer-stop",
+  "tooltip": true
+}
+```
+
+Optional CSS for the "prayer time soon" amber tint:
+
+```css
+#custom-prayer.prayer-soon { color: @warning; }
+```
+
+### Optional Hyprland keybind for stopping the adhan
+
+Append to `~/.config/hypr/bindings.conf`:
+
+```
+bind = SUPER CTRL, M, exec, omarchy-prayer-stop
+```
 
 ## Commands
 
