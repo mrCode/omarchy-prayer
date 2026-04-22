@@ -2,6 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     minitest (5.27.0)
+    racc (1.8.1)
     rake (13.4.2)
     tomlrb (2.0.4)
     webrick (1.9.2)
@@ -12,12 +13,14 @@ PLATFORMS
 
 DEPENDENCIES
   minitest (~> 5.20)
+  racc (~> 1.7)
   rake
   tomlrb (~> 2.0)
   webrick (~> 1.8)
 
 CHECKSUMS
   minitest (5.27.0) sha256=2d3b17f8a36fe7801c1adcffdbc38233b938eb0b4966e97a6739055a45fa77d5
+  racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   tomlrb (2.0.4) sha256=262f77947ac3ac9b3366a0a5940ecd238300c553e2e14f22009e2afcd2181b99
   webrick (1.9.2) sha256=beb4a15fc474defed24a3bda4ffd88a490d517c9e4e6118c3edce59e45864131
