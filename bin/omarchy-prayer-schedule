@@ -62,4 +62,4 @@ File.delete(OmarchyPrayer::Paths.mute_today) if File.exist?(OmarchyPrayer::Paths
 
 OmarchyPrayer::Scheduler.new.rebuild(today, pre_minutes: cfg.pre_notify_minutes)
 
-puts "omarchy-prayer: scheduled #{today.times.size} prayers for #{key} (#{source}, #{method})"
+puts "omarchy-prayer: scheduled #{OmarchyPrayer::Today::ORDER.size} prayers for #{key} (#{source}, #{method})"
