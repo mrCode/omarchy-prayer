@@ -83,6 +83,12 @@ bundle exec rake test
 - Spec: `docs/superpowers/specs/2026-04-22-omarchy-prayer-design.md`
 - Plan: `docs/superpowers/plans/2026-04-22-omarchy-prayer.md`
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## License
 
-TBD — will be added before the first public release.
+MIT — see [LICENSE](LICENSE). Copyright © 2026 Basem Aljedai.
+
+Prayer times via the [Aladhan API](https://aladhan.com/). Bundled adhan catalog sourced from [praytimes.org](https://praytimes.org/docs/adhan).
