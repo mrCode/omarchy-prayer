@@ -8,7 +8,7 @@ module TestHelper
   # Isolate HOME / XDG so tests never touch the real user's files.
   def with_isolated_home
     Dir.mktmpdir('omarchy-prayer-test-') do |home|
-      orig = %w[HOME XDG_CONFIG_HOME XDG_STATE_HOME XDG_CACHE_HOME XDG_RUNTIME_DIR PATH]
+      orig = %w[HOME XDG_CONFIG_HOME XDG_STATE_HOME XDG_CACHE_HOME XDG_RUNTIME_DIR PATH OP_SHIM_LOG]
               .map { |k| [k, ENV[k]] }.to_h
       ENV['HOME']            = home
       ENV['XDG_CONFIG_HOME'] = "#{home}/.config"
@@ -22,6 +22,7 @@ module TestHelper
     end
   end
 
+  # Must be called inside with_isolated_home; PATH + OP_SHIM_LOG are restored there.
   # Put a temp dir at the front of PATH holding log-only shims for commands.
   # The shim writes "<name>\t<argv joined by \t>\n" to $OP_SHIM_LOG.
   def with_shims(home, names)
