@@ -2,6 +2,9 @@
 Description=Daily rebuild of omarchy-prayer timers
 
 [Timer]
+# Rebuild transient per-prayer timers shortly after the user session starts,
+# so a mid-day reboot doesn't leave the rest of the day un-scheduled.
+OnStartupSec=30s
 OnCalendar=*-*-* 00:01:00
 Persistent=true
 AccuracySec=30s

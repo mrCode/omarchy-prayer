@@ -7,6 +7,7 @@ require 'omarchy_prayer/first_run'
 require 'omarchy_prayer/config'
 require 'omarchy_prayer/today'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/setup'
 require 'fileutils'
 
 def today_cache_fresh?
@@ -69,7 +70,19 @@ end
 def cmd_tui
   require 'omarchy_prayer/tui'
   OmarchyPrayer::FirstRun.ensure_config!
+  # Idempotent — no-op fast path when everything is already in place.
+  OmarchyPrayer::Setup.run(io: $stderr)
   OmarchyPrayer::TUI.new.run
+end
+
+def cmd_setup
+  OmarchyPrayer::FirstRun.ensure_config!
+  changes = OmarchyPrayer::Setup.run
+  if changes.empty?
+    puts 'omarchy-prayer: already set up (adhan audio, waybar widget, systemd timer).'
+  else
+    changes.each { |line| puts "  - #{line}" }
+  end
 end
 
 def cmd_adhans(argv)
@@ -113,6 +126,7 @@ when 'status'     then cmd_status
 when 'refresh'    then cmd_refresh
 when 'mute-today' then cmd_mute_today
 when 'adhans'     then cmd_adhans(ARGV[1..] || [])
+when 'setup'      then cmd_setup
 when '-h', '--help', 'help'
   puts <<~USAGE
     usage: omarchy-prayer [command]
@@ -125,6 +139,7 @@ when '-h', '--help', 'help'
       refresh       re-run the scheduler
       mute-today    toggle today-only mute flag
       adhans        manage adhan audio library (list|download|set|current)
+      setup         download default adhans, patch waybar config, enable timers
   USAGE
 else
   warn "unknown subcommand: #{ARGV[0].inspect}"

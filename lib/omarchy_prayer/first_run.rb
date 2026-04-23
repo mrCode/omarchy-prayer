@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/geolocate'
+require 'omarchy_prayer/setup'
 
 module OmarchyPrayer
   module FirstRun
@@ -53,6 +54,7 @@ module OmarchyPrayer
                         lat: loc[:latitude], lon: loc[:longitude],
                         city: loc[:city], country: loc[:country]))
       out.puts "omarchy-prayer: wrote config for #{loc[:city]}, #{loc[:country]} (edit #{Paths.config_file} to override)"
+      Setup.run(io: out)
       true
     rescue Geolocate::Error => e
       raise "first-run failed: #{e.message}\n" \

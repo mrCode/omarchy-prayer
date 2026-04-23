@@ -15,17 +15,11 @@ Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
 
 ```bash
 yay -S omarchy-prayer        # or: paru -S omarchy-prayer
+omarchy-prayer               # first-run: geolocates, downloads Makkah+Madinah,
+                             # patches waybar config, enables systemd timers
 ```
 
-Then enable the scheduler + resume hook and open the TUI to bootstrap:
-
-```bash
-systemctl --user enable --now omarchy-prayer-schedule.timer
-systemctl --user enable omarchy-prayer-resume.service
-omarchy-prayer adhans download makkah      # or any other from `omarchy-prayer adhans list`
-omarchy-prayer adhans set makkah
-omarchy-prayer                             # first-run auto-detects location
-```
+The first `omarchy-prayer` invocation runs `setup` automatically: it downloads the default **Makkah** adhan (and **Madinah** for Fajr), injects the `custom/prayer` widget into `~/.config/waybar/config.jsonc` (your original is backed up to `config.jsonc.bak.omarchy-prayer-<ts>`), and enables the `--user` schedule timer + resume hook. Re-run `omarchy-prayer setup` any time to re-apply.
 
 ### Arch — manually (without an AUR helper)
 
@@ -33,6 +27,7 @@ omarchy-prayer                             # first-run auto-detects location
 git clone https://aur.archlinux.org/omarchy-prayer.git
 cd omarchy-prayer
 makepkg -si
+omarchy-prayer
 ```
 
 ### From source (any distro with Hyprland + mako + waybar)
@@ -43,11 +38,11 @@ cd omarchy-prayer
 ./install.sh
 ```
 
-`install.sh` verifies dependencies, installs the scripts to `~/.local/bin/`, registers `systemd --user` units, and runs the initial schedule. It prints "next steps" for wiring up the waybar widget and an optional Hyprland keybind.
+`install.sh` verifies dependencies, installs scripts to `~/.local/bin/`, registers `systemd --user` units, runs the initial schedule, and runs `omarchy-prayer setup` to download the default adhans and patch your waybar config.
 
 ### Waybar widget
 
-Add this module to `~/.config/waybar/config.jsonc` and put `"custom/prayer"` in your `modules-right`:
+`omarchy-prayer setup` patches your waybar config automatically. If you want to do it manually, add this module to `~/.config/waybar/config.jsonc` and put `"custom/prayer"` in your `modules-right`:
 
 ```jsonc
 "custom/prayer": {
@@ -86,6 +81,7 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 | `omarchy-prayer mute-today`    | toggle today-only mute flag                    |
 | `omarchy-prayer-stop`          | kill any playing adhan                         |
 | `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
+| `omarchy-prayer setup`         | re-run setup (default adhans + waybar + timers)|
 
 ## Configuration
 

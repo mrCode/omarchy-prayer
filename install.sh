@@ -68,28 +68,25 @@ if ! "$BIN_DIR/omarchy-prayer-schedule"; then
   warn "initial schedule failed — fix issues above and run 'omarchy-prayer refresh' after"
 fi
 
+msg "running setup (default adhans, waybar widget, systemd units)"
+"$BIN_DIR/omarchy-prayer" setup || warn "setup reported errors — see above"
+
 cat <<EOF
 
-next steps:
+all done. summary:
 
-  1. add to ~/.config/waybar/config:
+  - default adhans (Makkah + Madinah/Fajr) downloaded + set
+  - waybar \"custom/prayer\" module injected into ~/.config/waybar/config.jsonc
+    (original backed up to config.jsonc.bak.omarchy-prayer-<ts>)
+  - systemd user timers enabled (daily reschedule + resume hook)
 
-     "custom/prayer": {
-       "exec": "omarchy-prayer-waybar",
-       "interval": 30,
-       "return-type": "json",
-       "on-click": "alacritty -e omarchy-prayer tui",
-       "tooltip": true
-     }
+optional:
 
-     and add "custom/prayer" to your modules-right array.
+  - Hyprland keybind — add to ~/.config/hypr/bindings.conf:
+      bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 
-  2. (optional) add to ~/.config/hypr/bindings.conf:
+  - inspect today's schedule:  systemctl --user list-timers | grep op-
 
-     bind = SUPER CTRL, M, exec, omarchy-prayer-stop
-
-  3. drop your adhan MP3s at $CFG_DIR/adhan.mp3 and adhan-fajr.mp3
-
-  4. inspect today's schedule:  systemctl --user list-timers | grep op-
+  - re-run setup any time:     omarchy-prayer setup
 
 EOF
