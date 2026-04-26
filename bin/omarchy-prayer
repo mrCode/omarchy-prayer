@@ -53,7 +53,8 @@ def cmd_status
 end
 
 def cmd_refresh
-  system('systemctl', '--user', 'start', 'omarchy-prayer-schedule.service')
+  schedule = File.expand_path('omarchy-prayer-schedule', __dir__)
+  exec(schedule)
 end
 
 def cmd_mute_today
