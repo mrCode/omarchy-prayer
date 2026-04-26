@@ -8,7 +8,7 @@ module OmarchyPrayer
 
     # Returns [source_label, day_hash] where source_label ∈ {cache, api, offline}.
     def resolve(year:, month:, day:, lat:, lon:, method_name:, tz_offset:, offline_fallback:)
-      cached = safe { @client.read_cache(year: year, month: month) }
+      cached = safe { @client.read_cache(year: year, month: month, lat: lat, lon: lon, method_name: method_name) }
       if cached && cached[day]
         return ['cache', cached[day]]
       end

@@ -8,8 +8,8 @@ class TestTimesSource < Minitest::Test
   class StubClient
     attr_reader :calls
     def initialize(behavior); @behavior = behavior; @calls = []; end
-    def read_cache(year:, month:)
-      @calls << [:read_cache, year, month]
+    def read_cache(year:, month:, lat:, lon:, method_name:)
+      @calls << [:read_cache, year, month, lat, lon, method_name]
       @behavior[:cache]
     end
     def fetch_month(year:, month:, lat:, lon:, method_name:)

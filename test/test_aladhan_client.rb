@@ -55,12 +55,30 @@ class TestAladhanClient < Minitest::Test
     with_isolated_home do
       client = OmarchyPrayer::AladhanClient.new(base_url: @base)
       first = client.fetch_month(year: 2026, month: 4, lat: 24.7136, lon: 46.6753, method_name: 'MWL')
-      cache_file = OmarchyPrayer::Paths.month_cache('2026-04')
-      assert File.exist?(cache_file)
+      assert_equal 1, Dir.glob(File.join(OmarchyPrayer::Paths.state_dir, 'times-*.json')).size
       # Prove second call works without server.
       @server.shutdown; @thread.join; @server = nil
-      second = client.read_cache(year: 2026, month: 4)
+      second = client.read_cache(year: 2026, month: 4, lat: 24.7136, lon: 46.6753, method_name: 'MWL')
       assert_equal first, second
+    end
+  end
+
+  def test_cache_segregates_by_location
+    with_isolated_home do
+      client = OmarchyPrayer::AladhanClient.new(base_url: @base)
+      client.fetch_month(year: 2026, month: 4, lat: 24.7136, lon: 46.6753, method_name: 'MWL')
+      # Different city — must NOT hit the existing cache.
+      miss = client.read_cache(year: 2026, month: 4, lat: 21.4225, lon: 39.8262, method_name: 'MWL')
+      assert_nil miss, 'cache key must include location; expected miss for a different city'
+    end
+  end
+
+  def test_cache_segregates_by_method
+    with_isolated_home do
+      client = OmarchyPrayer::AladhanClient.new(base_url: @base)
+      client.fetch_month(year: 2026, month: 4, lat: 24.7136, lon: 46.6753, method_name: 'MWL')
+      miss = client.read_cache(year: 2026, month: 4, lat: 24.7136, lon: 46.6753, method_name: 'Makkah')
+      assert_nil miss, 'cache key must include method; expected miss when method changes'
     end
   end
 end
