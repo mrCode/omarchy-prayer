@@ -50,12 +50,12 @@ module OmarchyPrayer
           end
         end
       end
-      write_cache(year: year, month: month, days: days)
+      write_cache(year: year, month: month, lat: lat, lon: lon, method_name: method_name, days: days)
       days
     end
 
-    def read_cache(year:, month:)
-      path = Paths.month_cache(format('%04d-%02d', year, month))
+    def read_cache(year:, month:, lat:, lon:, method_name:)
+      path = Paths.month_cache(cache_key(year, month, lat, lon, method_name))
       return nil unless File.exist?(path)
       JSON.parse(File.read(path))
     rescue JSON::ParserError
@@ -64,9 +64,18 @@ module OmarchyPrayer
 
     private
 
-    def write_cache(year:, month:, days:)
+    def write_cache(year:, month:, lat:, lon:, method_name:, days:)
       Paths.ensure_state_dir
-      File.write(Paths.month_cache(format('%04d-%02d', year, month)), JSON.pretty_generate(days))
+      File.write(Paths.month_cache(cache_key(year, month, lat, lon, method_name)),
+                 JSON.pretty_generate(days))
+    end
+
+    # Cache key includes location + method so a config change naturally lands
+    # in a different file rather than returning stale times for the old city.
+    def cache_key(year, month, lat, lon, method_name)
+      format('%04d-%02d-lat%.4f-lon%.4f-%s',
+             year, month, lat, lon,
+             method_name.gsub(/[^A-Za-z0-9]/, ''))
     end
 
     def reformat_date(ddmmyyyy)
