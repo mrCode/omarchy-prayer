@@ -56,6 +56,13 @@ def cmd_refresh
   system('systemctl', '--user', 'start', 'omarchy-prayer-schedule.service')
 end
 
+def cmd_relocate(argv)
+  require 'omarchy_prayer/relocate'
+  OmarchyPrayer::Relocate.run(argv)
+  schedule = File.expand_path('omarchy-prayer-schedule', __dir__)
+  exec(schedule)
+end
+
 def cmd_mute_today
   if File.exist?(OmarchyPrayer::Paths.mute_today)
     File.delete(OmarchyPrayer::Paths.mute_today)
@@ -124,6 +131,7 @@ when 'today'      then cmd_today
 when 'next'       then cmd_next
 when 'status'     then cmd_status
 when 'refresh'    then cmd_refresh
+when 'relocate'   then cmd_relocate(ARGV[1..] || [])
 when 'mute-today' then cmd_mute_today
 when 'adhans'     then cmd_adhans(ARGV[1..] || [])
 when 'setup'      then cmd_setup
@@ -137,6 +145,7 @@ when '-h', '--help', 'help'
       next          print next prayer name + time
       status        print source/method/city/hijri line
       refresh       re-run the scheduler
+      relocate      update [location] (re-detect via IP, or pass --lat/--lon/--city/--country)
       mute-today    toggle today-only mute flag
       adhans        manage adhan audio library (list|download|set|current)
       setup         download default adhans, patch waybar config, enable timers
