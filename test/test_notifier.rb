@@ -44,6 +44,25 @@ class TestNotifier < Minitest::Test
     end
   end
 
+  def test_audio_spawned_before_blocking_notify_send
+    with_isolated_home do |home|
+      log = with_shims(home, %w[notify-send makoctl mpv])
+      ENV['OP_SHIM_STDOUT_MAKOCTL'] = 'default'
+      adhan, fajr = adhan_files(home)
+      notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
+      sleep 0.1
+      entries = read_shim_log(log)
+      mpv_idx        = entries.index { |e| e[0] == 'mpv' }
+      action_idx = entries.index do |e|
+        e[0] == 'notify-send' && e.any? { |a| a.start_with?('--action=') }
+      end
+      refute_nil mpv_idx, "mpv not invoked: #{entries.inspect}"
+      refute_nil action_idx, "notify-send --action= not invoked: #{entries.inspect}"
+      assert mpv_idx < action_idx,
+             "audio must spawn before the blocking notify-send --action=, got order: #{entries.inspect}"
+    end
+  end
+
   def test_fajr_uses_fajr_variant
     with_isolated_home do |home|
       log = with_shims(home, %w[notify-send makoctl mpv])

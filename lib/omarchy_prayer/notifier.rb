@@ -18,10 +18,10 @@ module OmarchyPrayer
       return if @respect && dnd?
 
       title, body, action = compose(prayer, event)
-      args = ['-a', 'omarchy-prayer', title, body]
-      args += ['--action=stop-adhan=Stop adhan'] if action
-      system('notify-send', *args)
 
+      # Spawn audio before notify-send: when --action= is passed, notify-send
+      # blocks until the popup times out (mako default 5s) or is dismissed,
+      # which would otherwise delay adhan playback past prayer time.
       if event == 'on-time' && @audio_enabled
         file = prayer == :fajr ? @adhan_fajr : @adhan
         if File.exist?(file)
@@ -31,6 +31,10 @@ module OmarchyPrayer
                  'Adhan audio missing', "Not found: #{file}")
         end
       end
+
+      args = ['-a', 'omarchy-prayer', title, body]
+      args += ['--action=stop-adhan=Stop adhan'] if action
+      system('notify-send', *args)
     end
 
     private
