@@ -78,6 +78,7 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 | `omarchy-prayer next`          | print next prayer name + time                  |
 | `omarchy-prayer status`        | print source/method/city line                  |
 | `omarchy-prayer refresh`       | re-run the scheduler                           |
+| `omarchy-prayer relocate`      | re-detect location (IP) or set manually        |
 | `omarchy-prayer mute-today`    | toggle today-only mute flag                    |
 | `omarchy-prayer-stop`          | kill any playing adhan                         |
 | `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
@@ -86,6 +87,17 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 ## Configuration
 
 Edit `~/.config/omarchy-prayer/config.toml` — the installer seeds it on first run via IP geolocation. See `docs/superpowers/specs/2026-04-22-omarchy-prayer-design.md` for all options.
+
+### Updating location
+
+IP geolocation resolves to your ISP's regional hub city, not necessarily the city you're physically in (e.g. an IP in Makkah commonly resolves to Jeddah). After first-run, verify `omarchy-prayer status` shows the right city. If it doesn't — or when you travel — use `relocate`:
+
+```bash
+omarchy-prayer relocate                                            # re-detect via IP
+omarchy-prayer relocate --lat 21.4225 --lon 39.8262 --city Makkah --country SA   # manual override
+```
+
+`relocate` rewrites the `[location]` block in `config.toml` (preserving comments and other settings), invalidates cached month data so prayer times for the new location are fetched fresh, and runs the scheduler so today's times take effect immediately.
 
 ## Adhan library
 
