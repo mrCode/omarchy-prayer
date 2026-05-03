@@ -71,4 +71,31 @@ class TestConfig < Minitest::Test
       assert_equal "#{home}/.config/omarchy-prayer/adhan-fajr.mp3", cfg.adhan_fajr_path
     end
   end
+
+  def test_auto_update_defaults_to_true_when_missing
+    write_config(MINIMAL) do |cfg, _|
+      assert_equal true, cfg.auto_update?
+    end
+  end
+
+  def test_auto_update_explicit_false_parsed
+    cfg_text = MINIMAL.sub("country = \"SA\"\n", "country = \"SA\"\nauto_update = false\n")
+    write_config(cfg_text) do |cfg, _|
+      assert_equal false, cfg.auto_update?
+    end
+  end
+
+  def test_auto_update_explicit_true_parsed
+    cfg_text = MINIMAL.sub("country = \"SA\"\n", "country = \"SA\"\nauto_update = true\n")
+    write_config(cfg_text) do |cfg, _|
+      assert_equal true, cfg.auto_update?
+    end
+  end
+
+  def test_auto_update_non_boolean_rejected
+    cfg_text = MINIMAL.sub("country = \"SA\"\n", "country = \"SA\"\nauto_update = \"yes\"\n")
+    assert_raises(OmarchyPrayer::Config::InvalidError) do
+      write_config(cfg_text) { }
+    end
+  end
 end
