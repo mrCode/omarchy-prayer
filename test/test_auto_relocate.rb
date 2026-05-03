@@ -126,4 +126,10 @@ class TestAutoRelocate < Minitest::Test
       assert_match(/auto-relocate skipped/, io.string)
     end
   end
+
+  def test_schedule_script_calls_auto_relocate
+    src = File.read(File.expand_path('../bin/omarchy-prayer-schedule', __dir__))
+    assert_match(%r{require 'omarchy_prayer/auto_relocate'}, src)
+    assert_match(/AutoRelocate\.maybe_update\(cfg\)/, src)
+  end
 end
