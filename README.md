@@ -90,14 +90,26 @@ Edit `~/.config/omarchy-prayer/config.toml` — the installer seeds it on first 
 
 ### Updating location
 
-IP geolocation resolves to your ISP's regional hub city, not necessarily the city you're physically in (e.g. an IP in Makkah commonly resolves to Jeddah). After first-run, verify `omarchy-prayer status` shows the right city. If it doesn't — or when you travel — use `relocate`:
+Location auto-updates on every schedule rebuild — daily at 00:01, on session start, on resume from suspend, on `omarchy-prayer refresh`, and (if the NetworkManager dispatcher was installed) on every network connection-up. Each rebuild re-detects via ip-api.com and rewrites `[location]` in `config.toml` if the **country** changed or detected **coordinates drift more than 50 km** from the configured ones.
+
+The 50 km threshold is large enough to absorb ip-api.com's regional-hub jitter (e.g. an IP in Makkah commonly resolves to Jeddah — same metro, no rewrite) while still catching real travel between cities.
+
+To disable auto-update — for example, if you want the schedule pinned to a city you don't currently live in — set `auto_update = false` in the `[location]` block of `config.toml`. Manual override is still available:
 
 ```bash
-omarchy-prayer relocate                                            # re-detect via IP
+omarchy-prayer relocate                                            # one-shot re-detect via IP
 omarchy-prayer relocate --lat 21.4225 --lon 39.8262 --city Makkah --country SA   # manual override
 ```
 
 `relocate` rewrites the `[location]` block in `config.toml` (preserving comments and other settings), invalidates cached month data so prayer times for the new location are fetched fresh, and runs the scheduler so today's times take effect immediately.
+
+The NetworkManager dispatcher is installed by `install.sh` via sudo. If you skipped sudo or installed without it, install it manually:
+
+```bash
+sudo install -m 0755 -o root -g root \
+  share/networkmanager/90-omarchy-prayer \
+  /etc/NetworkManager/dispatcher.d/90-omarchy-prayer
+```
 
 ## Adhan library
 
