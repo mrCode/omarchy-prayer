@@ -55,6 +55,20 @@ systemctl --user daemon-reload
 systemctl --user enable --now omarchy-prayer-schedule.timer
 systemctl --user enable omarchy-prayer-resume.service || warn "resume service enable failed (non-critical)"
 
+NM_DISPATCHER=/etc/NetworkManager/dispatcher.d
+if [ -d "$NM_DISPATCHER" ]; then
+  msg "installing NetworkManager dispatcher (sudo) → $NM_DISPATCHER/90-omarchy-prayer"
+  if sudo install -m 0755 -o root -g root \
+       "$PROJECT_DIR/share/networkmanager/90-omarchy-prayer" \
+       "$NM_DISPATCHER/90-omarchy-prayer"; then
+    msg "NM dispatcher installed — auto-relocate will fire on connection-up"
+  else
+    warn "NM dispatcher install failed — falling back to daily/startup/resume triggers"
+  fi
+else
+  warn "NetworkManager dispatcher dir not found ($NM_DISPATCHER) — auto-relocate falls back to daily/startup/resume triggers"
+fi
+
 msg "seeding config dir"
 mkdir -p "$CFG_DIR"
 for f in adhan.mp3 adhan-fajr.mp3; do

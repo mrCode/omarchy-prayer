@@ -1,0 +1,18 @@
+#!/bin/bash
+# NetworkManager dispatcher: trigger omarchy-prayer schedule rebuild on
+# connection up. The schedule script auto-relocates if cfg.auto_update is set.
+# Installed at /etc/NetworkManager/dispatcher.d/90-omarchy-prayer (root).
+
+[ "$2" = "up" ] || exit 0
+
+USER_NAME=$(loginctl list-sessions --no-legend 2>/dev/null \
+  | awk '/seat0/ {print $3; exit}')
+[ -n "$USER_NAME" ] || exit 0
+
+USER_UID=$(id -u "$USER_NAME" 2>/dev/null) || exit 0
+
+runuser -l "$USER_NAME" -c \
+  "XDG_RUNTIME_DIR=/run/user/$USER_UID systemctl --user start omarchy-prayer-schedule.service" \
+  >/dev/null 2>&1 || true
+
+exit 0

@@ -132,4 +132,13 @@ class TestAutoRelocate < Minitest::Test
     assert_match(%r{require 'omarchy_prayer/auto_relocate'}, src)
     assert_match(/AutoRelocate\.maybe_update\(cfg\)/, src)
   end
+
+  def test_dispatcher_script_present_and_executable
+    path = File.expand_path('../share/networkmanager/90-omarchy-prayer', __dir__)
+    assert File.exist?(path), 'dispatcher script missing'
+    assert File.executable?(path), 'dispatcher script not executable'
+    body = File.read(path)
+    assert_match(%r{omarchy-prayer-schedule\.service}, body)
+    assert_match(/loginctl list-sessions/, body)
+  end
 end
