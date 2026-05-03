@@ -1,4 +1,4 @@
-# Auto-relocate on schedule + network-up
+# Auto-relocate on schedule + network-up; friendlier TUI dates
 
 ## Motivation
 
@@ -123,6 +123,27 @@ Replace the "Updating location" section content (currently directs users to `oma
 - Disable: set `auto_update = false` in `[location]`.
 - Manual override still available via `omarchy-prayer relocate --lat ... --lon ... --city ... --country ...`.
 - NM dispatcher: installed by `install.sh` for instant updates on network change; if absent, falls back to the daily/startup/resume triggers.
+
+### TUI header: friendlier date display
+
+The current TUI header (`lib/omarchy_prayer/tui.rb:66-70`) renders:
+
+```
+                    OMARCHY  PRAYER
+                Riyadh, SA     ·     2026-05-03
+                  15 Dhu al-Qi'dah 1447
+```
+
+Update `render_header` to:
+
+1. Format Gregorian as `Sun, 3 May 2026` (`%a, %-d %b %Y`) instead of ISO `2026-05-03`.
+2. Render both dates on a single line when Hijri is available: `Sun, 3 May 2026  ·  15 Dhu al-Qi'dah 1447`.
+3. Hijri-missing fallback: just the Gregorian line (current offline path goes through `OfflineCalc` which doesn't supply Hijri — keep that behavior unchanged).
+4. Location line stays as `City, CC`.
+
+New TUI test assertions in `test/test_tui.rb` (or whichever covers `render_header`): seed a `Today` with both dates and assert the rendered header contains `Sun, 3 May 2026  ·  15 Dhu al-Qi'dah 1447`; seed without `hijri` and assert only the Gregorian portion appears.
+
+If no `test_tui.rb` exists, this gets a small new test file that exercises `render_header` against an in-memory `StringIO` writer.
 
 ## Out of scope
 
