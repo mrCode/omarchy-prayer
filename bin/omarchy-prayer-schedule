@@ -10,6 +10,7 @@ require 'omarchy_prayer/aladhan_client'
 require 'omarchy_prayer/offline_calc'
 require 'omarchy_prayer/scheduler'
 require 'omarchy_prayer/first_run'
+require 'omarchy_prayer/auto_relocate'
 
 def resolve_method(cfg)
   cfg.method_name == 'auto' ? OmarchyPrayer::CountryMethods.resolve(cfg.country) : cfg.method_name
@@ -20,7 +21,10 @@ def tz_offset_seconds
 end
 
 OmarchyPrayer::FirstRun.ensure_config!
-cfg    = OmarchyPrayer::Config.load
+cfg = OmarchyPrayer::Config.load
+if cfg.auto_update? && OmarchyPrayer::AutoRelocate.maybe_update(cfg)
+  cfg = OmarchyPrayer::Config.load
+end
 method = resolve_method(cfg)
 date   = Date.today
 key    = date.strftime('%Y-%m-%d')

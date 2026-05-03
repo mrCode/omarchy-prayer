@@ -8,10 +8,13 @@ module OmarchyPrayer
     TEMPLATE = <<~TOML
       [location]
       # Edit freely; filled from IP geolocation on first run.
-      latitude  = %<lat>.4f
-      longitude = %<lon>.4f
-      city      = "%<city>s"
-      country   = "%<country>s"
+      latitude    = %<lat>.4f
+      longitude   = %<lon>.4f
+      city        = "%<city>s"
+      country     = "%<country>s"
+      # Re-detect on every schedule run (daily, on resume, on network up).
+      # Set to false to pin location and only update via `omarchy-prayer relocate`.
+      auto_update = true
 
       [method]
       # "auto" picks from country; see README for full list.

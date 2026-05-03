@@ -1,5 +1,6 @@
 require 'io/console'
 require 'fileutils'
+require 'date'
 require 'omarchy_prayer/theme'
 require 'omarchy_prayer/today'
 require 'omarchy_prayer/config'
@@ -65,8 +66,17 @@ module OmarchyPrayer
 
     def render_header
       center bold + fg(:accent) + 'OMARCHY  PRAYER' + rst
-      center fg(:muted) + "#{@cfg.city}, #{@cfg.country}     #{dot}     #{@today.date}" + rst
-      center fg(:muted) + @today.hijri + rst if @today.hijri
+      center fg(:muted) + "#{@cfg.city}, #{@cfg.country}" + rst
+      center fg(:muted) + format_date_line + rst
+    end
+
+    def format_date_line
+      gregorian = format_gregorian(@today.date)
+      @today.hijri ? "#{gregorian}     #{dot}     #{@today.hijri}" : gregorian
+    end
+
+    def format_gregorian(iso_date)
+      Date.parse(iso_date).strftime('%a, %-d %b %Y')
     end
 
     def render_next_card(name, at, now)

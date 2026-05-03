@@ -39,6 +39,10 @@ module OmarchyPrayer
     def city;      @raw['location']['city'];      end
     def country;   @raw['location']['country'];   end
 
+    def auto_update?
+      @raw['location'].fetch('auto_update', true)
+    end
+
     def method_name; @raw['method']['name']; end
 
     def offsets
@@ -76,6 +80,9 @@ module OmarchyPrayer
       end
       raise InvalidError, '[location].latitude out of range (-90..90)'   unless (-90..90).cover?(loc['latitude'])
       raise InvalidError, '[location].longitude out of range (-180..180)' unless (-180..180).cover?(loc['longitude'])
+      if loc.key?('auto_update') && ![true, false].include?(loc['auto_update'])
+        raise InvalidError, '[location].auto_update must be a boolean'
+      end
 
       unless KNOWN_METHODS.include?(@raw['method']['name'])
         raise InvalidError, "[method].name #{@raw['method']['name'].inspect} unknown (try: #{KNOWN_METHODS.join(', ')})"
