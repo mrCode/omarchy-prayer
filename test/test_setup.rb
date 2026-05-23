@@ -43,12 +43,17 @@ class TestSetup < Minitest::Test
   # --- adhan bootstrap --------------------------------------------------------
 
   def test_ensure_default_adhans_downloads_when_placeholder_and_missing
+    original_urls = {}
     with_isolated_home do |home|
       write_minimal_config
       # Override AdhanCatalog entries so downloads hit our stub.
+      # SUNNI is a module-level constant — save originals so we don't
+      # leak the stub URL into sibling tests (e.g. TestAdhanCatalog).
       server, thr, base = start_mp3_stub
       OmarchyPrayer::AdhanCatalog::SUNNI.each do |e|
-        e[:url] = "#{base}/#{e[:key]}.mp3" if %w[makkah madinah].include?(e[:key])
+        next unless %w[makkah madinah].include?(e[:key])
+        original_urls[e[:key]] = e[:url]
+        e[:url] = "#{base}/#{e[:key]}.mp3"
       end
 
       done = []
@@ -67,6 +72,9 @@ class TestSetup < Minitest::Test
       assert_includes done.join("\n"), 'makkah'
       assert_includes done.join("\n"), 'madinah'
     ensure
+      OmarchyPrayer::AdhanCatalog::SUNNI.each do |e|
+        e[:url] = original_urls[e[:key]] if original_urls.key?(e[:key])
+      end
       server&.shutdown
       thr&.join
     end
