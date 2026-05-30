@@ -17,9 +17,40 @@ module OmarchyPrayer
 
     module_function
 
-    # Temporary shim — Task 7 replaces this with the TZ-aware orchestrator.
-    def detect(**kwargs)
-      detect_ip(**kwargs)
+    DEFAULT_IP_DETECT = ->(*args, **kw) { Geolocate.detect_ip(*args, **kw) }
+    DEFAULT_TZ_DETECT = -> { TzLocation.detect }
+
+    def detect(ip_detect: DEFAULT_IP_DETECT, tz_detect: DEFAULT_TZ_DETECT, io: $stderr)
+      ip = safe_ip(ip_detect)
+      tz = safe_tz(tz_detect)
+
+      if ip && tz
+        return ip if tz[:countries].include?(ip[:country].to_s.upcase)
+        io.puts format('omarchy-prayer: IP→%s, %s but timezone is %s — using %s, %s',
+                       ip[:city], ip[:country], tz[:zone], tz[:city], tz[:country])
+        return tz_to_loc(tz)
+      end
+
+      return ip if ip
+      return tz_to_loc(tz) if tz
+      raise Error, 'no location signal available (IP failed, timezone unresolved)'
+    end
+
+    def safe_ip(callable)
+      callable.call
+    rescue *NETWORK_ERRORS
+      nil
+    end
+
+    def safe_tz(callable)
+      callable.call
+    rescue StandardError
+      nil
+    end
+
+    def tz_to_loc(tz)
+      { latitude: tz[:latitude], longitude: tz[:longitude],
+        city: tz[:city], country: tz[:country] }
     end
 
     def detect_ip(url: DEFAULT_URL, timeout: 5)
