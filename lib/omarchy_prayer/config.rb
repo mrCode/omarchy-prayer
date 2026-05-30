@@ -19,7 +19,7 @@ module OmarchyPrayer
                            'adhan' => '~/.config/omarchy-prayer/adhan.mp3',
                            'adhan_fajr' => '~/.config/omarchy-prayer/adhan-fajr.mp3',
                            'volume' => 80 },
-      'waybar'        => { 'format' => '{prayer} {countdown}', 'soon_threshold_minutes' => 10 }
+      'waybar'        => { 'format' => '{city} · {prayer} {countdown}', 'soon_threshold_minutes' => 10 }
     }.freeze
 
     attr_reader :raw

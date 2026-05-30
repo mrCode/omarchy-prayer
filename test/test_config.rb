@@ -30,7 +30,7 @@ class TestConfig < Minitest::Test
       assert_equal 'mpv',   cfg.audio_player
       assert_equal 80,      cfg.volume
       assert_equal({fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0}, cfg.offsets)
-      assert_equal '{prayer} {countdown}', cfg.waybar_format
+      assert_equal '{city} · {prayer} {countdown}', cfg.waybar_format
       assert_equal 10,      cfg.soon_threshold_minutes
     end
   end

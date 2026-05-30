@@ -41,7 +41,7 @@ module OmarchyPrayer
       volume     = 80
 
       [waybar]
-      format                 = "{prayer} {countdown}"
+      format                 = "{city} · {prayer} {countdown}"
       soon_threshold_minutes = 10
     TOML
 
