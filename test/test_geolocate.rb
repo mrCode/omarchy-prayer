@@ -11,7 +11,7 @@ class TestGeolocate < Minitest::Test
     server.mount_proc('/') { |_, res| res.body = body; res.content_type = 'application/json' }
     thr = Thread.new { server.start }
     url = "http://127.0.0.1:#{server.config[:Port]}/"
-    result = OmarchyPrayer::Geolocate.detect(url: url, timeout: 2)
+    result = OmarchyPrayer::Geolocate.detect_ip(url: url, timeout: 2)
     assert_equal 'Riyadh', result[:city]
     assert_equal 'SA',     result[:country]
     assert_in_delta 24.7136, result[:latitude], 1e-6
@@ -27,7 +27,7 @@ class TestGeolocate < Minitest::Test
     server.mount_proc('/') { |_, r| r.body = '{"status":"fail"}'; r.content_type = 'application/json' }
     thr = Thread.new { server.start }
     err = assert_raises(OmarchyPrayer::Geolocate::Error) do
-      OmarchyPrayer::Geolocate.detect(url: "http://127.0.0.1:#{server.config[:Port]}/", timeout: 2)
+      OmarchyPrayer::Geolocate.detect_ip(url: "http://127.0.0.1:#{server.config[:Port]}/", timeout: 2)
     end
     assert_match(/geolocation failed/, err.message)
   ensure

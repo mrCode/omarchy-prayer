@@ -1,16 +1,28 @@
 require 'net/http'
 require 'uri'
 require 'json'
+require 'omarchy_prayer/tz_location'
 
 module OmarchyPrayer
   module Geolocate
     class Error < StandardError; end
 
-    DEFAULT_URL = 'http://ip-api.com/json/'
+    DEFAULT_URL = 'http://ip-api.com/json/'.freeze
+
+    NETWORK_ERRORS = [
+      Error, SocketError,
+      Errno::ECONNREFUSED, Errno::ENETUNREACH, Errno::EHOSTUNREACH,
+      Timeout::Error
+    ].freeze
 
     module_function
 
-    def detect(url: DEFAULT_URL, timeout: 5)
+    # Temporary shim — Task 7 replaces this with the TZ-aware orchestrator.
+    def detect(**kwargs)
+      detect_ip(**kwargs)
+    end
+
+    def detect_ip(url: DEFAULT_URL, timeout: 5)
       uri = URI(url)
       resp = Net::HTTP.start(uri.host, uri.port,
                              use_ssl: uri.scheme == 'https',
