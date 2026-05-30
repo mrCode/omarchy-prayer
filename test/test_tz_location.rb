@@ -66,4 +66,54 @@ class TestTzLocation < Minitest::Test
   def test_table_missing_file_returns_empty
     assert_empty OmarchyPrayer::TzLocation.load_table('/nonexistent/zone1970.tab')
   end
+
+  def test_detect_returns_full_loc_for_known_zone
+    orig = ENV['TZ']
+    ENV['TZ'] = 'Europe/London'
+    loc = OmarchyPrayer::TzLocation.detect(table_path: FIXTURE)
+    assert_equal 'London', loc[:city]
+    assert_equal 'GB', loc[:country]
+    assert_equal %w[GB GG IM JE], loc[:countries]
+    assert_in_delta 51.5083, loc[:latitude], 1e-4
+    assert_in_delta(-0.1253, loc[:longitude], 1e-4)
+    assert_equal 'Europe/London', loc[:zone]
+  ensure
+    ENV['TZ'] = orig
+  end
+
+  def test_detect_city_underscore_becomes_space
+    orig = ENV['TZ']
+    ENV['TZ'] = 'America/New_York'
+    loc = OmarchyPrayer::TzLocation.detect(table_path: FIXTURE)
+    assert_equal 'New York', loc[:city]
+    assert_equal 'US', loc[:country]
+  ensure
+    ENV['TZ'] = orig
+  end
+
+  def test_detect_nested_zone_uses_last_segment
+    orig = ENV['TZ']
+    ENV['TZ'] = 'America/Indiana/Indianapolis'
+    loc = OmarchyPrayer::TzLocation.detect(table_path: FIXTURE)
+    assert_equal 'Indianapolis', loc[:city]
+  ensure
+    ENV['TZ'] = orig
+  end
+
+  def test_detect_returns_nil_when_zone_unresolved
+    orig = ENV['TZ']
+    ENV['TZ'] = 'Etc/Unknown-Zone'
+    assert_nil OmarchyPrayer::TzLocation.detect(table_path: FIXTURE)
+  ensure
+    ENV['TZ'] = orig
+  end
+
+  def test_detect_returns_nil_when_zone_name_unavailable
+    orig = ENV['TZ']
+    ENV['TZ'] = ''
+    skip 'zone_name fallback depends on system' if OmarchyPrayer::TzLocation.zone_name
+    assert_nil OmarchyPrayer::TzLocation.detect(table_path: FIXTURE)
+  ensure
+    ENV['TZ'] = orig
+  end
 end

@@ -63,5 +63,22 @@ module OmarchyPrayer
     rescue StandardError
       {}
     end
+
+    def detect(table_path: DEFAULT_TAB)
+      zone = zone_name
+      return nil if zone.nil? || zone.empty?
+      row = load_table(table_path)[zone]
+      return nil unless row
+      city = zone.split('/').last.to_s.tr('_', ' ')
+      country = row[:countries].first
+      {
+        latitude:  row[:lat],
+        longitude: row[:lon],
+        city:      city,
+        country:   country,
+        countries: row[:countries],
+        zone:      zone
+      }
+    end
   end
 end
