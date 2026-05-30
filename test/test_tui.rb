@@ -119,4 +119,31 @@ class TestTUI < Minitest::Test
       OmarchyPrayer::Relocate.define_singleton_method(:run, original_run) if original_run
     end
   end
+
+  def test_test_audio_shows_disabled_toast_when_audio_off
+    with_isolated_home do
+      FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+      File.write(OmarchyPrayer::Paths.config_file, <<~TOML)
+        [location]
+        latitude  = 24.7136
+        longitude = 46.6753
+        city      = "Riyadh"
+        country   = "SA"
+
+        [audio]
+        enabled = false
+      TOML
+      cfg = OmarchyPrayer::Config.load
+      out = StringIO.new
+      tui = OmarchyPrayer::TUI.new(out: out)
+      tui.instance_variable_set(:@cfg, cfg)
+      tui.instance_variable_set(:@width, 80)
+      tui.instance_variable_set(:@theme, OmarchyPrayer::Theme.load)
+      toasted = []
+      tui.define_singleton_method(:show_toast) { |msg, **_| toasted << msg }
+
+      tui.send(:test_audio)
+      assert toasted.any? { |m| m =~ /audio disabled/ }
+    end
+  end
 end

@@ -223,6 +223,11 @@ module OmarchyPrayer
     end
 
     def test_audio
+      unless @cfg.audio_enabled
+        show_toast('audio disabled — set audio.enabled = true to enable',
+                   color: :warning, dwell: 1.5)
+        return
+      end
       file = @cfg.adhan_path
       return unless File.exist?(file)
       pid = Process.spawn(@cfg.audio_player, '--no-video', '--really-quiet',
