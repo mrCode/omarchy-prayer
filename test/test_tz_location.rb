@@ -23,4 +23,21 @@ class TestTzLocation < Minitest::Test
   ensure
     ENV['TZ'] = orig
   end
+
+  def test_parse_coord_short_form
+    lat, lon = OmarchyPrayer::TzLocation.parse_iso6709('+2438+04643')
+    assert_in_delta 24.6333, lat, 1e-4
+    assert_in_delta 46.7166, lon, 1e-4
+  end
+
+  def test_parse_coord_long_form
+    lat, lon = OmarchyPrayer::TzLocation.parse_iso6709('+513030-0000731')
+    assert_in_delta 51.5083, lat, 1e-4
+    assert_in_delta(-0.1253, lon, 1e-4)
+  end
+
+  def test_parse_coord_returns_nil_on_garbage
+    assert_nil OmarchyPrayer::TzLocation.parse_iso6709('not-a-coord')
+    assert_nil OmarchyPrayer::TzLocation.parse_iso6709('')
+  end
 end
