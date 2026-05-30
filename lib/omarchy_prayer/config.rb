@@ -15,7 +15,7 @@ module OmarchyPrayer
       'method'        => { 'name' => 'auto' },
       'offsets'       => { 'fajr' => 0, 'dhuhr' => 0, 'asr' => 0, 'maghrib' => 0, 'isha' => 0 },
       'notifications' => { 'enabled' => true, 'pre_notify_minutes' => 10, 'respect_silencing' => true },
-      'audio'         => { 'enabled' => true, 'player' => 'mpv',
+      'audio'         => { 'enabled' => false, 'player' => 'mpv',
                            'adhan' => '~/.config/omarchy-prayer/adhan.mp3',
                            'adhan_fajr' => '~/.config/omarchy-prayer/adhan-fajr.mp3',
                            'volume' => 80 },

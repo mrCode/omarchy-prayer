@@ -26,7 +26,7 @@ class TestConfig < Minitest::Test
       assert_equal 'auto',  cfg.method_name
       assert_equal 10,      cfg.pre_notify_minutes
       assert_equal true,    cfg.respect_silencing
-      assert_equal true,    cfg.audio_enabled
+      assert_equal false,   cfg.audio_enabled
       assert_equal 'mpv',   cfg.audio_player
       assert_equal 80,      cfg.volume
       assert_equal({fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0}, cfg.offsets)
@@ -96,6 +96,12 @@ class TestConfig < Minitest::Test
     cfg_text = MINIMAL.sub("country = \"SA\"\n", "country = \"SA\"\nauto_update = \"yes\"\n")
     assert_raises(OmarchyPrayer::Config::InvalidError) do
       write_config(cfg_text) { }
+    end
+  end
+
+  def test_audio_enabled_default_is_false
+    write_config(MINIMAL) do |cfg, _|
+      assert_equal false, cfg.audio_enabled
     end
   end
 end
