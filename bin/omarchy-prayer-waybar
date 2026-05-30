@@ -9,7 +9,8 @@ begin
   cfg = OmarchyPrayer::Config.load
   t   = OmarchyPrayer::Today.read
   puts OmarchyPrayer::Waybar.render(t, format: cfg.waybar_format,
-                                     soon_minutes: cfg.soon_threshold_minutes)
+                                     soon_minutes: cfg.soon_threshold_minutes,
+                                     city: cfg.city)
 rescue StandardError => e
   require 'json'
   puts JSON.generate(text: '', tooltip: "omarchy-prayer: #{e.message}", class: 'prayer-error')

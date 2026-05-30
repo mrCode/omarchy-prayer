@@ -55,6 +55,17 @@ cd omarchy-prayer
 }
 ```
 
+The widget supports four placeholders in `waybar.format`:
+
+| Placeholder    | Renders as                    |
+|----------------|-------------------------------|
+| `{city}`       | current city (e.g. `London`)  |
+| `{prayer}`     | next prayer name (e.g. `Maghrib`) |
+| `{time}`       | next prayer time (e.g. `18:01`) |
+| `{countdown}`  | remaining time (e.g. `1h 12m`) |
+
+Default format is `{city} · {prayer} {countdown}`. Omit `{city}` from the format to hide it.
+
 Optional CSS for the "prayer time soon" amber tint:
 
 ```css
@@ -84,6 +95,8 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 | `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
 | `omarchy-prayer setup`         | re-run setup (default adhans + waybar + timers)|
 
+In the TUI, press `[l]` to trigger relocate interactively without leaving the screen.
+
 ## Configuration
 
 Edit `~/.config/omarchy-prayer/config.toml` — the installer seeds it on first run via IP geolocation. See `docs/superpowers/specs/2026-04-22-omarchy-prayer-design.md` for all options.
@@ -103,6 +116,12 @@ omarchy-prayer relocate --lat 21.4225 --lon 39.8262 --city Makkah --country SA  
 
 `relocate` rewrites the `[location]` block in `config.toml` (preserving comments and other settings), invalidates cached month data so prayer times for the new location are fetched fresh, and runs the scheduler so today's times take effect immediately.
 
+Location detection cross-checks IP geolocation against your system timezone (`/etc/localtime`). If you're roaming through a foreign carrier or behind a VPN that places your IP in a different country, the system timezone takes precedence — so `omarchy-prayer` won't auto-relocate you to the carrier's country. To override manually:
+
+```bash
+omarchy-prayer relocate --lat 51.5074 --lon -0.1278 --city London --country GB
+```
+
 The NetworkManager dispatcher is installed by `install.sh` via sudo. If you skipped sudo or installed without it, install it manually:
 
 ```bash
@@ -110,6 +129,17 @@ sudo install -m 0755 -o root -g root \
   share/networkmanager/90-omarchy-prayer \
   /etc/NetworkManager/dispatcher.d/90-omarchy-prayer
 ```
+
+### Adhan audio (default: muted)
+
+The adhan audio is **muted by default** — you'll see the mako prayer notification but won't hear the call. To enable, edit `~/.config/omarchy-prayer/config.toml`:
+
+```toml
+[audio]
+enabled = true
+```
+
+Existing users upgrading from earlier versions are migrated to muted on first run; a stderr line announces the change with re-enable instructions.
 
 ## Adhan library
 

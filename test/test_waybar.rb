@@ -14,7 +14,7 @@ class TestWaybar < Minitest::Test
 
   def test_countdown_and_class
     now = Time.new(2026,4,22, 13,4,0, 10800)  # 2h 14m before Asr 15:18
-    json = OmarchyPrayer::Waybar.render(today, now: now,
+    json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
       format: '{prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
     assert_equal 'Asr 2h 14m', data['text']
@@ -25,15 +25,31 @@ class TestWaybar < Minitest::Test
 
   def test_soon_class_applied_within_threshold
     now = Time.new(2026,4,22, 15,12,0, 10800)  # 6m before Asr
-    json = OmarchyPrayer::Waybar.render(today, now: now,
+    json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
       format: '{prayer} {countdown}', soon_minutes: 10)
     assert_equal 'prayer-soon', JSON.parse(json)['class']
   end
 
   def test_after_isha_shows_tomorrow_fajr
     now = Time.new(2026,4,22, 22,0,0, 10800)
-    json = OmarchyPrayer::Waybar.render(today, now: now,
+    json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
       format: '{prayer} {time}', soon_minutes: 10)
     assert_match(/Fajr 04:15/, JSON.parse(json)['text'])
+  end
+
+  def test_city_placeholder_substitution
+    now = Time.new(2026,4,22, 13,4,0, 10800)
+    json = OmarchyPrayer::Waybar.render(today, now: now, city: 'London',
+      format: '{city} · {prayer} {countdown}', soon_minutes: 10)
+    data = JSON.parse(json)
+    assert_equal 'London · Asr 2h 14m', data['text']
+  end
+
+  def test_city_omitted_when_not_in_format
+    now = Time.new(2026,4,22, 13,4,0, 10800)
+    json = OmarchyPrayer::Waybar.render(today, now: now, city: 'London',
+      format: '{prayer} {countdown}', soon_minutes: 10)
+    data = JSON.parse(json)
+    assert_equal 'Asr 2h 14m', data['text']
   end
 end

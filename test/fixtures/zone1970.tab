@@ -1,0 +1,8 @@
+# Test fixture — subset of real zone1970.tab. DO NOT add comments mid-row.
+# Format: country-codes<TAB>coordinates<TAB>TZ<TAB>comments
+GB,GG,IM,JE	+513030-0000731	Europe/London
+SA,AQ,KW,YE	+2438+04643	Asia/Riyadh	Syowa
+US	+404251-0740023	America/New_York	Eastern (most areas)
+US	+394606-0860929	America/Indiana/Indianapolis	Eastern - IN (most areas)
+FR,MC	+4852+00220	Europe/Paris
+JP,AU	+353916+1394441	Asia/Tokyo	Eyre Bird Observatory

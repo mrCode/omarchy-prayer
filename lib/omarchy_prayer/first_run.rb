@@ -33,14 +33,15 @@ module OmarchyPrayer
       respect_silencing  = true
 
       [audio]
-      enabled    = true
+      # set to true to play the adhan audio at each prayer
+      enabled    = false
       player     = "mpv"
       adhan      = "~/.config/omarchy-prayer/adhan.mp3"
       adhan_fajr = "~/.config/omarchy-prayer/adhan-fajr.mp3"
       volume     = 80
 
       [waybar]
-      format                 = "{prayer} {countdown}"
+      format                 = "{city} · {prayer} {countdown}"
       soon_threshold_minutes = 10
     TOML
 
@@ -49,7 +50,7 @@ module OmarchyPrayer
     # Returns true if config was just created; false if it already existed.
     def ensure_config!(geolocate: Geolocate, out: $stdout)
       return false if File.exist?(Paths.config_file)
-      out.puts 'omarchy-prayer: first-run — detecting location via ip-api.com…'
+      out.puts 'omarchy-prayer: first-run — detecting location (IP + system timezone)…'
       loc = geolocate.detect
       Paths.ensure_config_dir
       File.write(Paths.config_file,
