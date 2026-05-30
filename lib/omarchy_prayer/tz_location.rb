@@ -44,5 +44,24 @@ module OmarchyPrayer
       deg = deg_signed.to_i.abs
       sign * (deg + min_str.to_i / 60.0 + sec_str.to_i / 3600.0)
     end
+
+    def load_table(path = DEFAULT_TAB)
+      return {} unless File.exist?(path)
+      table = {}
+      File.foreach(path) do |line|
+        line = line.chomp
+        next if line.empty? || line.start_with?('#')
+        cols = line.split("\t")
+        next if cols.size < 3
+        countries = cols[0].split(',')
+        coord = parse_iso6709(cols[1])
+        zone = cols[2]
+        next unless coord && zone
+        table[zone] = { countries: countries, lat: coord[0], lon: coord[1] }
+      end
+      table
+    rescue StandardError
+      {}
+    end
   end
 end
