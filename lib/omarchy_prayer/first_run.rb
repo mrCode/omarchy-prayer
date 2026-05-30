@@ -33,7 +33,8 @@ module OmarchyPrayer
       respect_silencing  = true
 
       [audio]
-      enabled    = true
+      # set to true to play the adhan audio at each prayer
+      enabled    = false
       player     = "mpv"
       adhan      = "~/.config/omarchy-prayer/adhan.mp3"
       adhan_fajr = "~/.config/omarchy-prayer/adhan-fajr.mp3"
