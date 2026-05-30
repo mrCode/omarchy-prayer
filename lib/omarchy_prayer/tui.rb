@@ -1,11 +1,14 @@
 require 'io/console'
 require 'fileutils'
 require 'date'
+require 'stringio'
 require 'omarchy_prayer/theme'
 require 'omarchy_prayer/today'
 require 'omarchy_prayer/config'
 require 'omarchy_prayer/qibla'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/relocate'
+require 'omarchy_prayer/geolocate'
 
 module OmarchyPrayer
   class TUI
@@ -33,6 +36,7 @@ module OmarchyPrayer
           case key
           when 'q', "\x03" then break
           when 'r' then refresh_schedule
+          when 'l' then relocate_here
           when 'm' then toggle_mute
           when 't' then test_audio
           end
@@ -139,7 +143,7 @@ module OmarchyPrayer
 
     def render_hotkeys
       hk = ->(k, l) { fg(:accent) + "[#{k}]" + fg(:muted) + " #{l}" + rst }
-      line = [hk.call('q', 'quit'), hk.call('r', 'refresh'),
+      line = [hk.call('q', 'quit'), hk.call('r', 'refresh'), hk.call('l', 'relocate'),
               hk.call('m', 'mute today'), hk.call('t', 'test adhan')].join('     ')
       center line
     end
@@ -177,6 +181,31 @@ module OmarchyPrayer
     end
 
     # ---- Actions ----
+
+    def relocate_here
+      show_toast('locating…', color: :muted)
+      captured = StringIO.new
+      Relocate.run([], io: captured)
+      refresh_schedule
+      @cfg = Config.load
+      show_toast("→ #{@cfg.city}, #{@cfg.country}", color: :primary, dwell: 1.0)
+    rescue Geolocate::Error, SocketError,
+           Errno::ECONNREFUSED, Errno::ENETUNREACH, Errno::EHOSTUNREACH,
+           Timeout::Error, SystemExit => e
+      show_toast("relocate failed: #{e.message}", color: :warning, dwell: 1.5)
+    end
+
+    def show_toast(msg, color:, dwell: 0)
+      # Re-render hotkey row replaced with the toast text.
+      @out.print "\e[#{terminal_height};1H\e[2K"  # move to last row, clear
+      pad = [(@width - visible_len(msg)) / 2, 0].max
+      @out.print ' ' * pad + fg(color) + msg + rst
+      sleep dwell if dwell.positive?
+    end
+
+    def terminal_height
+      IO.console&.winsize&.first || 24
+    end
 
     def refresh_schedule
       system('systemctl', '--user', 'start', 'omarchy-prayer-schedule.service')
