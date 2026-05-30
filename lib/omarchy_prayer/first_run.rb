@@ -50,7 +50,7 @@ module OmarchyPrayer
     # Returns true if config was just created; false if it already existed.
     def ensure_config!(geolocate: Geolocate, out: $stdout)
       return false if File.exist?(Paths.config_file)
-      out.puts 'omarchy-prayer: first-run — detecting location via ip-api.com…'
+      out.puts 'omarchy-prayer: first-run — detecting location (IP + system timezone)…'
       loc = geolocate.detect
       Paths.ensure_config_dir
       File.write(Paths.config_file,

@@ -36,7 +36,7 @@ module OmarchyPrayer
       manual_keys = %i[latitude longitude city country]
       provided = manual_keys.count { |k| opts[k] }
       if provided.zero?
-        io.puts 'omarchy-prayer: re-detecting location via ip-api.com…'
+        io.puts 'omarchy-prayer: re-detecting location (IP + system timezone)…'
         geolocate.detect
       elsif provided == manual_keys.size
         opts.slice(*manual_keys)
