@@ -101,4 +101,16 @@ class TestMigrations < Minitest::Test
       assert_match(/\[notifications\]\nenabled = true/, cfg)
     end
   end
+
+  def test_omarchy_prayer_bin_requires_and_calls_migrations
+    src = File.read(File.expand_path('../bin/omarchy-prayer', __dir__))
+    assert_match(%r{require 'omarchy_prayer/migrations'}, src)
+    assert_match(/Migrations\.run/, src)
+  end
+
+  def test_omarchy_prayer_schedule_bin_requires_and_calls_migrations
+    src = File.read(File.expand_path('../bin/omarchy-prayer-schedule', __dir__))
+    assert_match(%r{require 'omarchy_prayer/migrations'}, src)
+    assert_match(/Migrations\.run/, src)
+  end
 end
