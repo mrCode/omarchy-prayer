@@ -9,7 +9,8 @@ Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
 - Scheduled via `systemd --user` timers; rebuilt daily at 00:01 and on resume from suspend.
 - Time source: Aladhan API (cached monthly) with offline fall-through calculator.
 
-![Preview](preview.png)
+![Desktop](preview.png)
+![Bar](preview-bar.png)
 !
 
 ## Install
