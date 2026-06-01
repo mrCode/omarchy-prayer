@@ -10,6 +10,7 @@ Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
 - Time source: Aladhan API (cached monthly) with offline fall-through calculator.
 
 ![Preview](preview.png)
+!
 
 ## Install
 
