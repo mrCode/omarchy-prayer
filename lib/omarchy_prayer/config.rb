@@ -19,7 +19,8 @@ module OmarchyPrayer
                            'adhan' => '~/.config/omarchy-prayer/adhan.mp3',
                            'adhan_fajr' => '~/.config/omarchy-prayer/adhan-fajr.mp3',
                            'volume' => 80 },
-      'waybar'        => { 'format' => '{city} · {prayer} {countdown}', 'soon_threshold_minutes' => 10 }
+      'waybar'        => { 'format' => '{city} · {prayer} {countdown}', 'soon_threshold_minutes' => 10,
+                           'icons' => true, 'time_12h' => false, 'colored' => false }
     }.freeze
 
     attr_reader :raw
@@ -61,6 +62,9 @@ module OmarchyPrayer
 
     def waybar_format;          @raw['waybar']['format'];                 end
     def soon_threshold_minutes; @raw['waybar']['soon_threshold_minutes']; end
+    def waybar_icons?;          @raw['waybar']['icons'];                  end
+    def waybar_time_12h?;       @raw['waybar']['time_12h'];               end
+    def waybar_colored?;        @raw['waybar']['colored'];                end
 
     private
 
