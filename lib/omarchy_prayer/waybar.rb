@@ -1,4 +1,5 @@
 require 'json'
+require 'time'
 require 'omarchy_prayer/today'
 
 module OmarchyPrayer
@@ -17,8 +18,9 @@ module OmarchyPrayer
     }.freeze
 
     COLORS = {
-      fajr: '#b8a9ff', dhuhr: '#ffda7a', asr: '#ffb347',
-      maghrib: '#ff6b6b', isha: '#74b9ff'
+      fajr: '#b8a9ff', sunrise: '#f5cba7', dhuhr: '#ffda7a',
+      asr: '#ffb347', maghrib: '#ff6b6b', isha: '#74b9ff',
+      fajr_tomorrow: '#b8a9ff'
     }.freeze
 
     module_function
@@ -33,7 +35,9 @@ module OmarchyPrayer
 
       prayer_text = pretty
       prayer_text = "#{ICONS[name]}#{pretty}" if icons
-      prayer_text = "<span color='#{COLORS[name]}'>#{prayer_text}</span>" if colored
+      if colored && (color = COLORS[name])
+        prayer_text = "<span color='#{color}'>#{prayer_text}</span>"
+      end
 
       text = format
         .gsub('{city}',      city.to_s)
@@ -56,11 +60,17 @@ module OmarchyPrayer
       h.positive? ? "#{h}h #{m}m" : "#{m}m"
     end
 
+    def format_tooltip_time(t, use_12h)
+      return t unless use_12h
+      time = t.is_a?(Time) ? t : Time.parse(t)
+      time.strftime('%I:%M %p').sub(/^0/, '')
+    rescue ArgumentError
+      t
+    end
+
     def build_tooltip(today, use_12h = false)
       Today::ORDER.map { |p|
-        t = today.times[p]
-        t = begin; Time.parse(t).strftime('%I:%M %p').sub(/^0/, ''); rescue; t; end if use_12h
-        format('%-7s %s', PRETTY[p], t)
+        format('%-7s %s', PRETTY[p], format_tooltip_time(today.times[p], use_12h))
       }.join("\n")
     end
   end
