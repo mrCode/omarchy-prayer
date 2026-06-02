@@ -45,7 +45,7 @@ module OmarchyPrayer
         .gsub('{time}',      time_s)
         .gsub('{countdown}', countdown)
       cls  = secs / 60 < soon_minutes ? 'prayer-soon' : 'prayer-normal'
-      JSON.generate(text: text, class: cls, tooltip: build_tooltip(today, time_12h))
+      JSON.generate(text: text, class: cls, tooltip: build_tooltip(today, time_12h), markup: true)
     end
 
     def format_time(at, use_12h)
