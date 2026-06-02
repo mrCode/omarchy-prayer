@@ -9,6 +9,10 @@ Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
 - Scheduled via `systemd --user` timers; rebuilt daily at 00:01 and on resume from suspend.
 - Time source: Aladhan API (cached monthly) with offline fall-through calculator.
 
+![Desktop](preview.png)
+![Bar](preview-bar.png)
+!
+
 ## Install
 
 ### Arch / Omarchy — from AUR (recommended)
@@ -65,6 +69,22 @@ The widget supports four placeholders in `waybar.format`:
 | `{countdown}`  | remaining time (e.g. `1h 12m`) |
 
 Default format is `{city} · {prayer} {countdown}`. Omit `{city}` from the format to hide it.
+
+Additional `[waybar]` config options:
+
+| Option     | Default | Description                                      |
+|------------|---------|--------------------------------------------------|
+| `icons`    | `true`  | Show emoji per prayer (🌛 ☀️ ⛅ 🌇 🌙)          |
+| `time_12h` | `false` | Display times in 12-hour AM/PM format            |
+| `colored`  | `false` | Color the prayer name by time of day (Pango markup) |
+
+Example:
+```toml
+[waybar]
+format  = "{prayer} {countdown}"
+time_12h = true
+colored  = true
+```
 
 Optional CSS for the "prayer time soon" amber tint:
 
