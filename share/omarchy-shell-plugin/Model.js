@@ -46,7 +46,16 @@ function qiblaLabel(qibla) {
   return "Qibla " + qibla.degrees + "° " + qibla.compass
 }
 
-// "Makkah · cache"
+// "Method Makkah · cache"
+//
+// The "Method" label is load-bearing: this sits on the same row as the qibla
+// bearing, and several calculation methods are named after cities — "Makkah",
+// "Karachi", "Tehran". Unlabelled, "Makkah" next to a bearing reads as the
+// qibla target rather than the method. The TUI labels these for the same
+// reason.
 function sourceLabel(method, source) {
-  return [method, source].filter(function(v) { return !!v }).join(" · ")
+  var parts = []
+  if (method) parts.push("Method " + method)
+  if (source) parts.push(source)
+  return parts.join(" · ")
 }
