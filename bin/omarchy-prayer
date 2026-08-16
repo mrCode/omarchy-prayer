@@ -45,9 +45,18 @@ def cmd_next
   puts "#{name} #{at.strftime('%H:%M')}"
 end
 
-def cmd_status
+def cmd_status(argv = [])
   ensure_today!
   t = OmarchyPrayer::Today.read
+
+  # Structured form consumed by the Omarchy 4 shell widget.
+  if argv.include?('--json')
+    require 'omarchy_prayer/config'
+    require 'omarchy_prayer/status'
+    puts OmarchyPrayer::Status.to_json(today: t, config: OmarchyPrayer::Config.load)
+    return
+  end
+
   line = "date #{t.date}  source #{t.source}  method #{t.method}  city #{t.city}"
   line += "  hijri #{t.hijri}" if t.hijri
   puts line
@@ -133,7 +142,7 @@ case ARGV[0]
 when nil, 'tui'   then cmd_tui
 when 'today'      then cmd_today
 when 'next'       then cmd_next
-when 'status'     then cmd_status
+when 'status'     then cmd_status(ARGV[1..] || [])
 when 'refresh'    then cmd_refresh
 when 'relocate'   then cmd_relocate(ARGV[1..] || [])
 when 'mute-today' then cmd_mute_today
@@ -147,7 +156,7 @@ when '-h', '--help', 'help'
       tui           open the TUI (default)
       today         print today's prayer times
       next          print next prayer name + time
-      status        print source/method/city/hijri line
+      status        print source/method/city/hijri line (--json for structured output)
       refresh       re-run the scheduler
       relocate      update [location] (re-detect via IP, or pass --lat/--lon/--city/--country)
       mute-today    toggle today-only mute flag

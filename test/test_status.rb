@@ -1,0 +1,101 @@
+require 'test_helper'
+require 'omarchy_prayer/today'
+require 'omarchy_prayer/config'
+require 'omarchy_prayer/status'
+
+class TestStatus < Minitest::Test
+  include TestHelper
+
+  def today
+    OmarchyPrayer::Today.new(
+      date: '2026-08-16', tz_offset: 10800, city: 'Riyadh', country: 'SA',
+      method: 'Makkah', source: 'cache', hijri: '3 Rabīʿ al-awwal 1448',
+      times: { fajr: '04:05', sunrise: '05:30', dhuhr: '11:57',
+               asr: '15:26', maghrib: '18:27', isha: '19:57' }
+    )
+  end
+
+  def config
+    OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224,
+                      'city' => 'Riyadh', 'country' => 'SA' },
+      'bar'      => { 'format' => '{city} · {prayer} {countdown}',
+                      'soon_threshold_minutes' => 10 }
+    )
+  end
+
+  # 16:30 — after Asr (15:26), before Maghrib (18:27).
+  def afternoon
+    Time.new(2026, 8, 16, 16, 30, 0, 10800)
+  end
+
+  def build(now: afternoon)
+    OmarchyPrayer::Status.build(today: today, config: config, now: now)
+  end
+
+  def test_shape_and_next_prayer
+    s = build
+    assert_equal 'Riyadh', s['city']
+    assert_equal 'SA', s['country']
+    assert_equal '2026-08-16', s['date']
+    assert_equal '3 Rabīʿ al-awwal 1448', s['hijri']
+    assert_equal 5, s['prayers'].length
+    assert_equal %w[fajr dhuhr asr maghrib isha], s['prayers'].map { |p| p['name'] }
+    assert_equal 'maghrib', s['next']['name']
+    assert_equal 'Maghrib', s['next']['pretty']
+    assert_equal '18:27', s['next']['time']
+    assert_equal 'Makkah', s['method']
+    assert_equal 'cache', s['source']
+    assert_equal '{city} · {prayer} {countdown}', s['pill']['format']
+    assert_equal 10, s['pill']['soon_threshold_minutes']
+  end
+
+  def test_passed_flags_track_now
+    by_name = build['prayers'].to_h { |p| [p['name'], p['passed']] }
+    assert by_name['fajr'],    'Fajr 04:05 has passed by 16:30'
+    assert by_name['asr'],     'Asr 15:26 has passed by 16:30'
+    refute by_name['maghrib'], 'Maghrib 18:27 has not passed'
+    refute by_name['isha'],    'Isha 19:57 has not passed'
+  end
+
+  def test_epoch_matches_wall_clock_and_next
+    s = build
+    maghrib = s['prayers'].find { |p| p['name'] == 'maghrib' }
+    assert_equal Time.new(2026, 8, 16, 18, 27, 0, 10800).to_i, maghrib['epoch']
+    assert_equal maghrib['epoch'], s['next']['epoch']
+  end
+
+  def test_after_isha_next_is_tomorrow_fajr
+    s = build(now: Time.new(2026, 8, 16, 22, 0, 0, 10800))
+    assert_equal 'fajr_tomorrow', s['next']['name']
+    assert_equal 'Fajr', s['next']['pretty']
+    assert_equal Time.new(2026, 8, 17, 4, 5, 0, 10800).to_i, s['next']['epoch']
+  end
+
+  def test_sunrise_excluded_from_prayer_list
+    refute_includes build['prayers'].map { |p| p['name'] }, 'sunrise'
+  end
+
+  def test_qibla_included
+    s = build
+    assert_kind_of Integer, s['qibla']['degrees']
+    assert_includes OmarchyPrayer::Qibla::CARDINALS, s['qibla']['compass']
+  end
+
+  def test_muted_reflects_marker
+    with_isolated_home do |_home|
+      refute build['muted'], 'not muted with no marker'
+      OmarchyPrayer::Paths.ensure_state_dir
+      FileUtils.touch(OmarchyPrayer::Paths.mute_today)
+      assert build['muted'], 'muted once the marker exists'
+    end
+  end
+
+  def test_to_json_round_trips
+    parsed = JSON.parse(
+      OmarchyPrayer::Status.to_json(today: today, config: config, now: afternoon)
+    )
+    assert_equal 'maghrib', parsed['next']['name']
+    assert_equal 5, parsed['prayers'].length
+  end
+end
