@@ -18,11 +18,18 @@ check_dep() {
 msg "verifying runtime deps"
 check_dep ruby        "pacman -S ruby"
 check_dep notify-send "pacman -S libnotify"
-check_dep makoctl     "pacman -S mako"
 check_dep systemd-run "(part of systemd)"
-check_dep waybar      "pacman -S waybar"
 check_dep mpv         "pacman -S mpv"
 check_dep curl        "pacman -S curl"
+
+# Omarchy 4 replaced waybar with a Quickshell bar and mako with an in-shell
+# notification daemon, so warning about either would be noise there.
+if command -v omarchy-shell >/dev/null 2>&1; then
+  msg "detected Omarchy shell — the prayer widget installs as a Quickshell plugin"
+else
+  check_dep waybar  "pacman -S waybar"
+  check_dep makoctl "pacman -S mako"
+fi
 
 # Gem dependency
 if ! ruby -e 'require "tomlrb"' 2>/dev/null; then
@@ -45,6 +52,15 @@ for bin in omarchy-prayer omarchy-prayer-schedule omarchy-prayer-notify \
       "$src" > "$dst"
   chmod +x "$dst"
 done
+
+PLUGIN_SRC="$PROJECT_DIR/share/omarchy-shell-plugin"
+PLUGIN_DEST="${HOME}/.local/share/omarchy-prayer/shell-plugin"
+if [ -d "$PLUGIN_SRC" ]; then
+  msg "installing shell plugin → $PLUGIN_DEST"
+  rm -rf "$PLUGIN_DEST"
+  mkdir -p "$(dirname "$PLUGIN_DEST")"
+  cp -R "$PLUGIN_SRC" "$PLUGIN_DEST"
+fi
 
 msg "installing systemd units → $UNIT_DIR"
 cp "$PROJECT_DIR/share/systemd/"*.service "$UNIT_DIR/"

@@ -1,10 +1,12 @@
 # omarchy-prayer
 
-Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
+Muslim prayer-time notifier for Omarchy (Hyprland). Ships a native bar widget for
+the **Omarchy 4 Quickshell shell**, and keeps the waybar module for Omarchy 3 and
+other Hyprland setups.
 
-- Fires mako notifications + plays the adhan at the five daily prayers.
+- Fires desktop notifications + plays the adhan at the five daily prayers.
 - 10-minute pre-notifications (configurable).
-- Waybar widget with live next-prayer countdown.
+- Bar widget with live next-prayer countdown, on Omarchy 4's shell or on waybar.
 - Themed full-screen TUI with qibla direction.
 - Scheduled via `systemd --user` timers; rebuilt daily at 00:01 and on resume from suspend.
 - Time source: Aladhan API (cached monthly) with offline fall-through calculator.
@@ -16,10 +18,18 @@ Muslim prayer-time notifier for Omarchy (Hyprland + mako + waybar).
 ```bash
 yay -S omarchy-prayer        # or: paru -S omarchy-prayer
 omarchy-prayer               # first-run: geolocates, downloads Makkah+Madinah,
-                             # patches waybar config, enables systemd timers
+                             # installs the bar widget, enables systemd timers
 ```
 
-The first `omarchy-prayer` invocation runs `setup` automatically: it downloads the default **Makkah** adhan (and **Madinah** for Fajr), injects the `custom/prayer` widget into `~/.config/waybar/config.jsonc` (your original is backed up to `config.jsonc.bak.omarchy-prayer-<ts>`), and enables the `--user` schedule timer + resume hook. Re-run `omarchy-prayer setup` any time to re-apply.
+The first `omarchy-prayer` invocation runs `setup` automatically: it downloads the default **Makkah** adhan (and **Madinah** for Fajr), installs the bar widget for whichever bar you run, and enables the `--user` schedule timer + resume hook. Re-run `omarchy-prayer setup` any time to re-apply.
+
+Setup detects your bar at runtime:
+
+- **Omarchy 4** — copies the `prayer.times` Quickshell plugin into `~/.config/omarchy/plugins/` and places it on your bar (backing up `shell.json` first).
+- **Omarchy 3 / other Hyprland** — injects the `custom/prayer` module into `~/.config/waybar/config.jsonc` (your original is backed up to `config.jsonc.bak.omarchy-prayer-<ts>`).
+- **Neither** — says so, and changes nothing.
+
+The widget is placed on your bar **once**. If you later remove it, re-running setup keeps the plugin files current but will not put it back.
 
 ### Arch — manually (without an AUR helper)
 
@@ -30,7 +40,7 @@ makepkg -si
 omarchy-prayer
 ```
 
-### From source (any distro with Hyprland + mako + waybar)
+### From source (any distro with Hyprland)
 
 ```bash
 git clone https://github.com/mrCode/omarchy-prayer.git
@@ -38,9 +48,27 @@ cd omarchy-prayer
 ./install.sh
 ```
 
-`install.sh` verifies dependencies, installs scripts to `~/.local/bin/`, registers `systemd --user` units, runs the initial schedule, and runs `omarchy-prayer setup` to download the default adhans and patch your waybar config.
+`install.sh` verifies dependencies, installs scripts to `~/.local/bin/`, registers `systemd --user` units, runs the initial schedule, and runs `omarchy-prayer setup` to download the default adhans and install the bar widget.
 
-### Waybar widget
+### Omarchy 4 bar widget
+
+`omarchy-prayer setup` installs and places it automatically. To do it by hand:
+
+```bash
+omarchy-shell shell enablePlugin prayer.times '{"section":"right","index":0}'
+```
+
+| Click  | Action |
+|--------|--------|
+| Left   | Open the prayer times panel |
+| Right  | Stop a playing adhan |
+| Middle | Open the TUI in a floating terminal |
+
+The panel lists the five prayers with the next one highlighted, plus qibla
+direction, calculation method, and time source, with **Mute today** and
+**Stop adhan** buttons.
+
+### Waybar widget (Omarchy 3 and other Hyprland setups)
 
 `omarchy-prayer setup` patches your waybar config automatically. If you want to do it manually, add this module to `~/.config/waybar/config.jsonc` and put `"custom/prayer"` in your `modules-right`:
 
@@ -55,7 +83,7 @@ cd omarchy-prayer
 }
 ```
 
-The widget supports four placeholders in `waybar.format`:
+Both widgets support four placeholders in `bar.format`:
 
 | Placeholder    | Renders as                    |
 |----------------|-------------------------------|
@@ -93,13 +121,27 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 | `omarchy-prayer mute-today`    | toggle today-only mute flag                    |
 | `omarchy-prayer-stop`          | kill any playing adhan                         |
 | `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
-| `omarchy-prayer setup`         | re-run setup (default adhans + waybar + timers)|
+| `omarchy-prayer setup`         | re-run setup (default adhans + bar widget + timers)|
 
 In the TUI, press `[l]` to trigger relocate interactively without leaving the screen.
 
 ## Configuration
 
 Edit `~/.config/omarchy-prayer/config.toml` — the installer seeds it on first run via IP geolocation. See `docs/superpowers/specs/2026-04-22-omarchy-prayer-design.md` for all options.
+
+### `[waybar]` is now `[bar]`
+
+Since 0.2.0 the widget section is named `[bar]`, because it configures both the
+Omarchy 4 Quickshell widget and the waybar module:
+
+```toml
+[bar]
+format                 = "{city} · {prayer} {countdown}"
+soon_threshold_minutes = 10
+```
+
+Existing configs are renamed automatically on the next run, and an unmigrated
+`[waybar]` section keeps working either way.
 
 ### Updating location
 
@@ -132,7 +174,7 @@ sudo install -m 0755 -o root -g root \
 
 ### Adhan audio (default: muted)
 
-The adhan audio is **muted by default** — you'll see the mako prayer notification but won't hear the call. To enable, edit `~/.config/omarchy-prayer/config.toml`:
+The adhan audio is **muted by default** — you'll see the prayer notification but won't hear the call. To enable, edit `~/.config/omarchy-prayer/config.toml`:
 
 ```toml
 [audio]
@@ -161,10 +203,10 @@ After install:
 
 - [ ] `omarchy-prayer today` lists five prayers with HH:MM times.
 - [ ] `systemctl --user list-timers | grep op-` shows 10 transient units.
-- [ ] `omarchy-prayer-notify fajr on-time` produces a mako popup and plays the Fajr adhan.
+- [ ] `omarchy-prayer-notify fajr on-time` produces a desktop notification and plays the Fajr adhan.
 - [ ] `omarchy-prayer-stop` silences the adhan within 1 second.
 - [ ] `omarchy-toggle-notification-silencing` on → repeat step 3 → no popup, no audio.
-- [ ] Waybar shows "<next prayer> <countdown>" and updates within 30 s.
+- [ ] The bar shows "<next prayer> <countdown>" and counts down live.
 - [ ] `omarchy-prayer` (TUI) renders with the active Omarchy theme colors.
 - [ ] After midnight, `systemctl --user list-timers | grep op-` shows the new day's units.
 - [ ] Airplane mode: `omarchy-prayer refresh` still produces a `today.json` (source=offline).
