@@ -4,9 +4,9 @@
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-08-16
-**Branch:** `feat/omarchy4-quickshell` (12 commits, not yet merged)
-**Status:** all 12 plan tasks implemented and verified live on Omarchy 4.0.0.
-Suite: 174 runs, 496 assertions, 0 failures. Ready to merge and release.
+**Branch:** merged to `master`; released as **v0.2.0**
+**Status:** SHIPPED. GitHub tag `v0.2.0` (eb5dfab), AUR `omarchy-prayer 0.2.0-1`,
+installed locally and verified working. Suite: 174 runs, 496 assertions, 0 failures.
 
 ---
 
@@ -115,7 +115,18 @@ Things that cost time and would cost it again:
 - Theme resolves the live Everforest palette (`muted` ≠ background)
 - `omarchy-prayer-waybar` output unchanged
 
-## Next steps
+## Release notes (v0.2.0, 2026-08-16)
 
-- [ ] Merge `feat/omarchy4-quickshell` → `master`
-- [ ] Release v0.2.0: tag → push GitHub → `updpkgsums` + push AUR → `yay -S`
+Shipped. One late scare worth remembering: the AUR `check()` runs the suite
+**without bundler**, where `minitest/mock` does not exist on Ruby 4.x — the new
+`.stub` calls died there while `bundle exec rake test` was green. Fixed by
+injecting the plugin source instead of monkeypatching, then the tag was moved
+to the fix commit (nothing had consumed it yet) and the checksum recomputed.
+See [[feedback-pkgbuild-check-divergence]].
+
+## Possible follow-ups (not scheduled)
+
+- Panel has no keyboard navigation beyond close/tab; rows are not focusable.
+- `Model.js` is pure but untested — a node harness could cover countdown
+  formatting and placeholder substitution if it ever earns it.
+- Vertical-bar layout shows the glyph only; the countdown is not rendered.
