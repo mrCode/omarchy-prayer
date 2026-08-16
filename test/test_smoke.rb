@@ -62,4 +62,9 @@ class TestSmoke < Minitest::Test
     server&.shutdown
     thr&.join
   end
+
+  def test_version_is_semver
+    require 'omarchy_prayer/version'
+    assert_match(/\A\d+\.\d+\.\d+\z/, OmarchyPrayer::VERSION)
+  end
 end
