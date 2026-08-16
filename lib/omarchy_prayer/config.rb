@@ -19,7 +19,7 @@ module OmarchyPrayer
                            'adhan' => '~/.config/omarchy-prayer/adhan.mp3',
                            'adhan_fajr' => '~/.config/omarchy-prayer/adhan-fajr.mp3',
                            'volume' => 80 },
-      'waybar'        => { 'format' => '{city} · {prayer} {countdown}', 'soon_threshold_minutes' => 10 }
+      'bar'           => { 'format' => '{city} · {prayer} {countdown}', 'soon_threshold_minutes' => 10 }
     }.freeze
 
     attr_reader :raw
@@ -30,7 +30,7 @@ module OmarchyPrayer
     end
 
     def initialize(raw)
-      @raw = merge_defaults(raw)
+      @raw = merge_defaults(normalize_bar_section(raw))
       validate!
     end
 
@@ -59,10 +59,24 @@ module OmarchyPrayer
     def adhan_path;      Paths.expand(@raw['audio']['adhan']);      end
     def adhan_fajr_path; Paths.expand(@raw['audio']['adhan_fajr']); end
 
-    def waybar_format;          @raw['waybar']['format'];                 end
-    def soon_threshold_minutes; @raw['waybar']['soon_threshold_minutes']; end
+    def bar_format;             @raw['bar']['format'];                 end
+    def soon_threshold_minutes; @raw['bar']['soon_threshold_minutes']; end
+
+    # Retained so existing callers keep working after the [waybar] -> [bar]
+    # rename.
+    def waybar_format; bar_format; end
 
     private
+
+    # An unmigrated config still has [waybar]. Promote it before defaults are
+    # merged, so the user's values win rather than being masked by defaults.
+    def normalize_bar_section(raw)
+      return raw unless raw.is_a?(Hash)
+      return raw if raw.key?('bar') || !raw.key?('waybar')
+      copy = raw.dup
+      copy['bar'] = copy.delete('waybar')
+      copy
+    end
 
     def merge_defaults(raw)
       result = DEFAULTS.each_with_object({}) { |(k, v), h| h[k] = v.dup }

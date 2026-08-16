@@ -30,6 +30,7 @@ class TestConfig < Minitest::Test
       assert_equal 'mpv',   cfg.audio_player
       assert_equal 80,      cfg.volume
       assert_equal({fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0}, cfg.offsets)
+      assert_equal '{city} · {prayer} {countdown}', cfg.bar_format
       assert_equal '{city} · {prayer} {countdown}', cfg.waybar_format
       assert_equal 10,      cfg.soon_threshold_minutes
     end
@@ -103,5 +104,46 @@ class TestConfig < Minitest::Test
     write_config(MINIMAL) do |cfg, _|
       assert_equal false, cfg.audio_enabled
     end
+  end
+
+  # --- [waybar] -> [bar] rename --------------------------------------------
+
+  def base_location
+    { 'latitude' => 24.7, 'longitude' => 46.7 }
+  end
+
+  def test_reads_bar_section
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location,
+      'bar'      => { 'format' => '{prayer} {time}', 'soon_threshold_minutes' => 5 }
+    )
+    assert_equal '{prayer} {time}', cfg.bar_format
+    assert_equal 5, cfg.soon_threshold_minutes
+  end
+
+  def test_falls_back_to_legacy_waybar_section
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location,
+      'waybar'   => { 'format' => '{city} legacy', 'soon_threshold_minutes' => 7 }
+    )
+    assert_equal '{city} legacy', cfg.bar_format,
+                 'an unmigrated config must keep working'
+    assert_equal 7, cfg.soon_threshold_minutes
+  end
+
+  def test_bar_section_wins_over_legacy_waybar_section
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location,
+      'bar'      => { 'format' => 'new' },
+      'waybar'   => { 'format' => 'old' }
+    )
+    assert_equal 'new', cfg.bar_format
+  end
+
+  def test_waybar_format_alias_still_works
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location, 'bar' => { 'format' => 'aliased' }
+    )
+    assert_equal 'aliased', cfg.waybar_format
   end
 end

@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'stringio'
 require 'omarchy_prayer/migrations'
 require 'omarchy_prayer/paths'
 
@@ -112,5 +113,38 @@ class TestMigrations < Minitest::Test
     src = File.read(File.expand_path('../bin/omarchy-prayer-schedule', __dir__))
     assert_match(%r{require 'omarchy_prayer/migrations'}, src)
     assert_match(/Migrations\.run/, src)
+  end
+
+  # --- [waybar] -> [bar] rename --------------------------------------------
+
+  def test_renames_waybar_section_to_bar
+    with_isolated_home do |_home|
+      OmarchyPrayer::Paths.ensure_config_dir
+      File.write(OmarchyPrayer::Paths.config_file, <<~TOML)
+        [location]
+        latitude = 24.7
+        longitude = 46.7
+
+        [waybar]
+        format = "{city} · {prayer} {countdown}"
+        soon_threshold_minutes = 10
+      TOML
+      OmarchyPrayer::Migrations.run(io: StringIO.new)
+      text = File.read(OmarchyPrayer::Paths.config_file)
+      assert_includes text, '[bar]'
+      refute_includes text, '[waybar]'
+      assert_includes text, 'soon_threshold_minutes = 10'
+      assert_includes text, 'format = "{city} · {prayer} {countdown}"'
+    end
+  end
+
+  def test_bar_rename_is_idempotent
+    with_isolated_home do |_home|
+      OmarchyPrayer::Paths.ensure_config_dir
+      original = "[bar]\nformat = \"x\"\n"
+      File.write(OmarchyPrayer::Paths.config_file, original)
+      2.times { OmarchyPrayer::Migrations.run(io: StringIO.new) }
+      assert_equal original, File.read(OmarchyPrayer::Paths.config_file)
+    end
   end
 end

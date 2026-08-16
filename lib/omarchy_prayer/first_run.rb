@@ -40,7 +40,7 @@ module OmarchyPrayer
       adhan_fajr = "~/.config/omarchy-prayer/adhan-fajr.mp3"
       volume     = 80
 
-      [waybar]
+      [bar]
       format                 = "{city} · {prayer} {countdown}"
       soon_threshold_minutes = 10
     TOML
