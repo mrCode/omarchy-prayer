@@ -19,7 +19,14 @@ Panel {
   readonly property var barIdentity: hostWidget || root
 
   readonly property var prayerData: hostWidget ? hostWidget.prayerData : null
-  readonly property bool ready: hostWidget ? hostWidget.ready : false
+
+  // Derived from the local prayerData, NOT from hostWidget.ready: those are
+  // separate bindings that update independently, so `ready` could briefly be
+  // true while this panel's prayerData was still null — every guard below
+  // would then dereference null.
+  readonly property bool ready: prayerData !== null && prayerData !== undefined
+    && prayerData.next !== undefined && prayerData.next !== null
+
   readonly property string countdown: hostWidget ? hostWidget.countdown : ""
   readonly property string nextName: ready ? prayerData.next.name : ""
 

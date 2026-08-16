@@ -140,7 +140,12 @@ BarWidget {
           root.recomputeCountdown()
         } catch (e) {
           root.prayerData = null
-          root.errorText = "omarchy-prayer: could not read status output"
+          // `status --json` landed in 0.2.0. An older CLI ignores the flag and
+          // prints its human-readable line, so name that case rather than
+          // leaving the user with a generic parse failure.
+          root.errorText = text.indexOf("date ") === 0
+            ? "omarchy-prayer is older than this widget — update to 0.2.0 or newer"
+            : "omarchy-prayer: could not read status output"
         }
       }
     }
