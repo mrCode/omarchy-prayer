@@ -1,3 +1,4 @@
+require 'tomlrb'
 require 'omarchy_prayer/paths'
 
 module OmarchyPrayer
@@ -49,19 +50,38 @@ module OmarchyPrayer
     def dim;   @no_color ? '' : "\e[2m"; end
     def reset; @no_color ? '' : "\e[0m"; end
 
+    # Omarchy 4 moved the current theme under XDG state; Omarchy 3 kept it in
+    # XDG config. Newest layout wins.
+    def self.theme_file_candidates
+      [
+        File.join(Paths.xdg_state_home,  'omarchy', 'current', 'theme', 'alacritty.toml'),
+        File.join(Paths.xdg_config_home, 'omarchy', 'current', 'alacritty.toml')
+      ]
+    end
+
+    # Section-aware parse. A flat regex scan would match [colors.normal].black,
+    # which in Omarchy 4 themes equals the background — rendering muted text
+    # invisible. Bright black is the intended dim grey.
     def self.parse_theme_file
-      path = File.join(Paths.xdg_config_home, 'omarchy', 'current', 'alacritty.toml')
-      return {} unless File.exist?(path)
-      txt = File.read(path)
-      out = {}
-      out[:background] = txt[/background\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out[:foreground] = txt[/foreground\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out[:accent]     = txt[/blue\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out[:primary]    = txt[/magenta\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out[:secondary]  = txt[/cyan\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out[:warning]    = txt[/yellow\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out[:muted]      = txt[/black\s*=\s*"(#[0-9a-fA-F]{6})"/, 1]
-      out.compact
+      path = theme_file_candidates.find { |p| File.exist?(p) }
+      return {} unless path
+
+      colors  = Tomlrb.load_file(path, symbolize_keys: false)['colors'] || {}
+      primary = colors['primary'] || {}
+      normal  = colors['normal']  || {}
+      bright  = colors['bright']  || {}
+
+      {
+        background: primary['background'],
+        foreground: primary['foreground'],
+        accent:     normal['blue'],
+        primary:    normal['magenta'],
+        secondary:  normal['cyan'],
+        warning:    normal['yellow'],
+        muted:      bright['black'] || normal['black']
+      }.select { |_, v| v.is_a?(String) && v.match?(HEX) }
+    rescue StandardError
+      {}
     end
 
     private
