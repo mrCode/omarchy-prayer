@@ -3,3 +3,4 @@
 /coverage/
 *.gem
 .tmp/
+.superpowers/
