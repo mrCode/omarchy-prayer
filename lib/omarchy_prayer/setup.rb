@@ -2,6 +2,8 @@ require 'fileutils'
 require 'json'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/adhan_manager'
+require 'omarchy_prayer/bar_detect'
+require 'omarchy_prayer/shell_plugin'
 
 module OmarchyPrayer
   # Idempotent, package-level bootstrap. Safe to re-run on every launch.
@@ -38,9 +40,24 @@ module OmarchyPrayer
     def run(io: $stdout, skip_network: false)
       done = []
       ensure_default_adhans(io: io, skip_network: skip_network, done: done)
-      ensure_waybar_module(io: io, done: done)
+      ensure_bar_integration(io: io, done: done)
       ensure_systemd_units(io: io, done: done)
       done
+    end
+
+    # --- bar integration ----------------------------------------------------
+
+    # Omarchy 4 runs a Quickshell bar; Omarchy 3 and other Hyprland setups run
+    # waybar. Install whichever is actually present, and say so honestly when
+    # neither is — previously this silently did nothing and still reported a
+    # widget as configured.
+    def ensure_bar_integration(io:, done:)
+      case BarDetect.detect
+      when :quickshell then ShellPlugin.install!(io: io, done: done)
+      when :waybar     then ensure_waybar_module(io: io, done: done)
+      else
+        done << 'no supported bar detected (neither Omarchy shell nor waybar) — skipped bar widget'
+      end
     end
 
     # --- adhan audio -------------------------------------------------------

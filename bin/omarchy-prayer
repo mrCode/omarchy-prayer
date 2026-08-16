@@ -99,7 +99,7 @@ def cmd_setup
   OmarchyPrayer::Migrations.run
   changes = OmarchyPrayer::Setup.run
   if changes.empty?
-    puts 'omarchy-prayer: already set up (adhan audio, waybar widget, systemd timer).'
+    puts 'omarchy-prayer: already set up — nothing to do.'
   else
     changes.each { |line| puts "  - #{line}" }
   end

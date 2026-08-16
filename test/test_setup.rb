@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'stringio'
 require 'webrick'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/setup'
@@ -272,6 +273,56 @@ class TestSetup < Minitest::Test
       assert_empty done
     ensure
       ENV.delete('OP_SHIM_STDOUT_SYSTEMCTL')
+    end
+  end
+
+  # --- bar integration dispatch --------------------------------------------
+
+  def test_bar_integration_installs_shell_plugin_on_quickshell
+    with_isolated_home do |home|
+      with_shims(home, %w[omarchy-shell])
+      ENV['PATH'] = File.join(home, 'shims')
+      ENV['OP_SHIM_STDOUT_OMARCHY_SHELL'] = 'ok'
+
+      # Stub the plugin source so this test covers dispatch, not the packaged
+      # asset's presence.
+      src = File.join(home, 'pkg', 'shell-plugin')
+      FileUtils.mkdir_p(src)
+      File.write(File.join(src, 'manifest.json'), '{"id":"prayer.times"}')
+
+      done = []
+      OmarchyPrayer::ShellPlugin.stub(:source_dir, src) do
+        OmarchyPrayer::Setup.ensure_bar_integration(io: StringIO.new, done: done)
+      end
+      assert done.any? { |d| d.include?('prayer.times') },
+             "expected shell plugin work, got: #{done.inspect}"
+    ensure
+      ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
+    end
+  end
+
+  def test_bar_integration_patches_waybar_when_only_waybar_present
+    with_isolated_home do |home|
+      with_shims(home, [])
+      ENV['PATH'] = File.join(home, 'shims')
+      FileUtils.mkdir_p("#{home}/.config/waybar")
+      File.write("#{home}/.config/waybar/config.jsonc",
+                 '{"modules-right": ["clock"], "clock": {"format": "{:%H:%M}"}}')
+      done = []
+      OmarchyPrayer::Setup.ensure_bar_integration(io: StringIO.new, done: done)
+      assert_includes File.read("#{home}/.config/waybar/config.jsonc"), 'custom/prayer'
+      assert done.any? { |d| d.include?('custom/prayer') }, done.inspect
+    end
+  end
+
+  def test_bar_integration_reports_when_no_bar_present
+    with_isolated_home do |home|
+      with_shims(home, [])
+      ENV['PATH'] = File.join(home, 'shims')
+      done = []
+      OmarchyPrayer::Setup.ensure_bar_integration(io: StringIO.new, done: done)
+      assert done.any? { |d| d.match?(/no supported bar/i) },
+             "setup must say so rather than silently claim a widget: #{done.inspect}"
     end
   end
 end
