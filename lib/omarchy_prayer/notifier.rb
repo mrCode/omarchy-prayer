@@ -43,9 +43,17 @@ module OmarchyPrayer
       File.exist?(Paths.mute_today)
     end
 
+    # Omarchy 4 runs notifications inside omarchy-shell; Omarchy 3 used mako.
+    # The live shell wins over mako, which lingers as an upgrade leftover.
+    # If neither answers we fire: a broken probe must never silently swallow
+    # a prayer notification.
     def dnd?
-      out = `makoctl mode 2>/dev/null`.strip
-      out.include?('do-not-disturb')
+      state = `omarchy-shell notifications isDnd 2>/dev/null`.strip
+      return state == 'on' if %w[on off].include?(state)
+
+      `makoctl mode 2>/dev/null`.strip.include?('do-not-disturb')
+    rescue StandardError
+      false
     end
 
     def compose(prayer, event)

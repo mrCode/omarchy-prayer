@@ -35,7 +35,7 @@ class TestNotifier < Minitest::Test
       ENV['OP_SHIM_STDOUT_MAKOCTL'] = 'default'
       adhan, fajr = adhan_files(home)
       notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
-      sleep 0.1
+      wait_for_shim(log, 'mpv')
       entries = read_shim_log(log)
       assert entries.any? { |e| e[0] == 'notify-send' && e.include?('Dhuhr') },
              "no notify-send with Dhuhr: #{entries.inspect}"
@@ -50,7 +50,7 @@ class TestNotifier < Minitest::Test
       ENV['OP_SHIM_STDOUT_MAKOCTL'] = 'default'
       adhan, fajr = adhan_files(home)
       notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
-      sleep 0.1
+      wait_for_shim(log, 'mpv')
       entries = read_shim_log(log)
       mpv_idx        = entries.index { |e| e[0] == 'mpv' }
       action_idx = entries.index do |e|
@@ -69,7 +69,7 @@ class TestNotifier < Minitest::Test
       ENV['OP_SHIM_STDOUT_MAKOCTL'] = 'default'
       adhan, fajr = adhan_files(home)
       notifier_for(today, adhan, fajr).fire(prayer: :fajr, event: 'on-time')
-      sleep 0.1
+      wait_for_shim(log, 'mpv')
       assert read_shim_log(log).any? { |e| e[0] == 'mpv' && e.include?(fajr) },
              "fajr variant not played"
     end
@@ -109,6 +109,65 @@ class TestNotifier < Minitest::Test
       adhan, fajr = adhan_files(home)
       notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
       assert_empty read_shim_log(log).select { |e| %w[notify-send mpv].include?(e[0]) }
+    end
+  end
+
+  # --- Omarchy 4 DND (omarchy-shell notifications isDnd) --------------------
+
+  # with_isolated_home restores HOME/XDG/PATH/OP_SHIM_LOG but not the per-shim
+  # stdout vars, so each test below clears its own.
+  def test_dnd_respected_via_omarchy_shell
+    with_isolated_home do |home|
+      log = with_shims(home, %w[notify-send omarchy-shell mpv])
+      ENV['OP_SHIM_STDOUT_OMARCHY_SHELL'] = 'on'
+      adhan, fajr = adhan_files(home)
+      notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
+      sleep 0.1
+      assert_empty read_shim_log(log).select { |e| e[0] == 'notify-send' }
+      assert_empty read_shim_log(log).select { |e| e[0] == 'mpv' }
+    ensure
+      ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
+    end
+  end
+
+  def test_fires_when_omarchy_shell_reports_dnd_off
+    with_isolated_home do |home|
+      log = with_shims(home, %w[notify-send omarchy-shell mpv])
+      ENV['OP_SHIM_STDOUT_OMARCHY_SHELL'] = 'off'
+      adhan, fajr = adhan_files(home)
+      notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
+      sleep 0.1
+      assert read_shim_log(log).any? { |e| e[0] == 'notify-send' && e.include?('Dhuhr') },
+             "expected a Dhuhr notification: #{read_shim_log(log).inspect}"
+    ensure
+      ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
+    end
+  end
+
+  def test_omarchy_shell_takes_precedence_over_makoctl
+    with_isolated_home do |home|
+      log = with_shims(home, %w[notify-send omarchy-shell makoctl mpv])
+      ENV['OP_SHIM_STDOUT_OMARCHY_SHELL'] = 'off'
+      ENV['OP_SHIM_STDOUT_MAKOCTL']       = 'do-not-disturb'
+      adhan, fajr = adhan_files(home)
+      notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
+      sleep 0.1
+      assert read_shim_log(log).any? { |e| e[0] == 'notify-send' },
+             'live shell DND state must win over a stale mako'
+    ensure
+      ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
+      ENV.delete('OP_SHIM_STDOUT_MAKOCTL')
+    end
+  end
+
+  def test_fires_when_neither_dnd_probe_answers
+    with_isolated_home do |home|
+      log = with_shims(home, %w[notify-send mpv])
+      adhan, fajr = adhan_files(home)
+      notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
+      sleep 0.1
+      assert read_shim_log(log).any? { |e| e[0] == 'notify-send' },
+             'a broken probe must never silently swallow a prayer notification'
     end
   end
 end

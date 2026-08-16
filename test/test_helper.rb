@@ -34,9 +34,12 @@ module TestHelper
       path = File.join(shim_dir, name)
       File.write(path, <<~SH)
         #!/usr/bin/env bash
-        printf '%s' "#{name}" >> "$OP_SHIM_LOG"
-        for a in "$@"; do printf '\t%s' "$a" >> "$OP_SHIM_LOG"; done
-        printf '\n' >> "$OP_SHIM_LOG"
+        line="#{name}"
+        for a in "$@"; do line="$line"$'\t'"$a"; done
+        # ONE append. Separate printf >> calls interleave when shims run
+        # concurrently (detached mpv vs foreground notify-send), splicing two
+        # invocations into one corrupted line.
+        printf '%s\\n' "$line" >> "$OP_SHIM_LOG"
         var="OP_SHIM_STDOUT_#{name.upcase.gsub(/[^A-Z0-9]/, '_')}"
         eval "out=\\"\\$$var\\""
         if [ -n "$out" ]; then printf '%s' "$out"; fi
@@ -51,5 +54,17 @@ module TestHelper
   def read_shim_log(path)
     return [] unless File.exist?(path)
     File.readlines(path, chomp: true).map { |l| l.split("\t") }
+  end
+
+  # Audio is spawned detached, so its shim can log after fire() returns. A
+  # fixed sleep races that under load; poll for the entry instead.
+  # Returns true once `name` appears, false on timeout.
+  def wait_for_shim(log, name, timeout: 2.0)
+    deadline = Time.now + timeout
+    while Time.now < deadline
+      return true if read_shim_log(log).any? { |e| e[0] == name }
+      sleep 0.02
+    end
+    false
   end
 end
