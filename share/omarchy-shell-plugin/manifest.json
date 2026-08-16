@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "prayer.times",
+  "name": "Prayer times",
+  "version": "0.2.0",
+  "author": "omarchy-prayer",
+  "description": "Next prayer countdown with a times panel",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "Prayer times",
+    "description": "Next prayer countdown with a times panel",
+    "category": "Info",
+    "allowMultiple": false
+  }
+}
