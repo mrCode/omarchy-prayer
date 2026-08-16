@@ -12,6 +12,26 @@ class TestWaybar < Minitest::Test
     )
   end
 
+  # Guards the refactor onto Status: both entry points must produce identical
+  # bytes, so existing waybar users see no change whatsoever.
+  def test_render_from_status_matches_render
+    require 'omarchy_prayer/config'
+    require 'omarchy_prayer/status'
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => 'Riyadh' },
+      'bar'      => { 'format' => '{city} · {prayer} {countdown}',
+                      'soon_threshold_minutes' => 10 }
+    )
+    status = OmarchyPrayer::Status.build(today: today, config: cfg, now: now)
+
+    legacy = OmarchyPrayer::Waybar.render(
+      today, now: now, city: 'Riyadh',
+      format: '{city} · {prayer} {countdown}', soon_minutes: 10
+    )
+    assert_equal legacy, OmarchyPrayer::Waybar.render_from_status(status, now: now)
+  end
+
   def test_countdown_and_class
     now = Time.new(2026,4,22, 13,4,0, 10800)  # 2h 14m before Asr 15:18
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
