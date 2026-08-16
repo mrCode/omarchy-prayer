@@ -4,8 +4,9 @@
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-08-16
-**Branch:** `master` (feature branch not yet created)
-**Status:** spec approved and committed; implementation plan being written
+**Branch:** `feat/omarchy4-quickshell` (12 commits, not yet merged)
+**Status:** all 12 plan tasks implemented and verified live on Omarchy 4.0.0.
+Suite: 174 runs, 496 assertions, 0 failures. Ready to merge and release.
 
 ---
 
@@ -86,9 +87,35 @@ native Quickshell plugin and fixes the compat breakages.
 - Plan: `docs/superpowers/plans/2026-08-16-omarchy4-quickshell.md`
 - Design mockups: `.superpowers/brainstorm/` (gitignored; companion server stopped)
 
+## Implementation notes (discovered while building)
+
+Things that cost time and would cost it again:
+
+- **`data` is QML's default property on `Item`.** Naming the widget's status
+  property `data` makes child elements unassignable and breaks the whole
+  component. It is called `prayerData`.
+- **`Ui/Button` emits `clicked()`**, while `Ui/WidgetButton` emits
+  `pressed(int button)`. They are not interchangeable.
+- **`Ui/BarIconButton` is icon-only** (fixed slot width). A text pill needs
+  `Ui/WidgetButton` directly, as `omarchy.clock` does.
+- **Quickshell caches compiled QML.** After a syntax-level fix, `rescanPlugins`
+  can keep serving the old version — use `omarchy restart shell` to be sure.
+- **The test shim had a concurrent-append race.** It wrote each log line with
+  three separate `printf >>` calls, so a detached mpv and a foreground
+  notify-send spliced into one corrupted entry. Now a single atomic append;
+  verified across 14 seeds.
+
+## Verified live on Omarchy 4.0.0
+
+- Widget renders on the bar, countdown ticks, panel opens, IPC refresh works
+- `setup` installs + places the plugin, backs up `shell.json`
+- Removing the widget from the bar survives a re-run of `setup`
+- `[waybar]` → `[bar]` migration ran against the real config
+- DND on → notification suppressed; DND off → notification fires
+- Theme resolves the live Everforest palette (`muted` ≠ background)
+- `omarchy-prayer-waybar` output unchanged
+
 ## Next steps
 
-- [ ] Finish the implementation plan
-- [ ] Create feature branch and begin execution
-- [ ] Implementation tasks (see plan)
-- [ ] Release v0.2.0 per the standard flow
+- [ ] Merge `feat/omarchy4-quickshell` → `master`
+- [ ] Release v0.2.0: tag → push GitHub → `updpkgsums` + push AUR → `yay -S`
