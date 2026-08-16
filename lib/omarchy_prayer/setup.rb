@@ -51,9 +51,11 @@ module OmarchyPrayer
     # waybar. Install whichever is actually present, and say so honestly when
     # neither is — previously this silently did nothing and still reported a
     # widget as configured.
-    def ensure_bar_integration(io:, done:)
+    # `plugin_source` is injectable for tests; production resolves it from the
+    # package. See ShellPlugin#install!.
+    def ensure_bar_integration(io:, done:, plugin_source: ShellPlugin.source_dir)
       case BarDetect.detect
-      when :quickshell then ShellPlugin.install!(io: io, done: done)
+      when :quickshell then ShellPlugin.install!(io: io, done: done, source: plugin_source)
       when :waybar     then ensure_waybar_module(io: io, done: done)
       else
         done << 'no supported bar detected (neither Omarchy shell nor waybar) — skipped bar widget'

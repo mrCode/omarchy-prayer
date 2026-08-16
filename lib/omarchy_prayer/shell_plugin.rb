@@ -40,8 +40,11 @@ module OmarchyPrayer
       File.exist?(version_file) ? File.read(version_file).strip : nil
     end
 
-    def install!(io:, done:, version: VERSION)
-      src = source_dir
+    # `source` is injectable so tests can point at a fixture directory without
+    # monkeypatching — minitest/mock is not available when the AUR PKGBUILD's
+    # check() runs the suite outside bundler.
+    def install!(io:, done:, version: VERSION, source: source_dir)
+      src = source
       unless src
         io.puts 'warning: shell plugin source not found — skipping bar widget'
         return

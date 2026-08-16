@@ -15,9 +15,9 @@ class TestShellPlugin < Minitest::Test
   end
 
   def install(version: '0.2.0', done: [], src:)
-    OmarchyPrayer::ShellPlugin.stub(:source_dir, src) do
-      OmarchyPrayer::ShellPlugin.install!(io: StringIO.new, done: done, version: version)
-    end
+    OmarchyPrayer::ShellPlugin.install!(
+      io: StringIO.new, done: done, version: version, source: src
+    )
     done
   end
 

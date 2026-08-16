@@ -291,9 +291,9 @@ class TestSetup < Minitest::Test
       File.write(File.join(src, 'manifest.json'), '{"id":"prayer.times"}')
 
       done = []
-      OmarchyPrayer::ShellPlugin.stub(:source_dir, src) do
-        OmarchyPrayer::Setup.ensure_bar_integration(io: StringIO.new, done: done)
-      end
+      OmarchyPrayer::Setup.ensure_bar_integration(
+        io: StringIO.new, done: done, plugin_source: src
+      )
       assert done.any? { |d| d.include?('prayer.times') },
              "expected shell plugin work, got: #{done.inspect}"
     ensure
