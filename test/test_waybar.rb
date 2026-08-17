@@ -37,7 +37,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
       format: '{prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
-    assert_equal "Asr \u200E2h 14m", data['text']
+    assert_equal 'Asr 2h 14m', data['text']
     assert_equal 'prayer-normal', data['class']
     assert_match(/Fajr.*04:15/, data['tooltip'])
     assert_match(/Asr.*15:18/,  data['tooltip'])
@@ -62,7 +62,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'London',
       format: '{city} · {prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
-    assert_equal "London · Asr \u200E2h 14m", data['text']
+    assert_equal 'London · Asr 2h 14m', data['text']
   end
 
   def test_city_omitted_when_not_in_format
@@ -70,7 +70,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'London',
       format: '{prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
-    assert_equal "Asr \u200E2h 14m", data['text']
+    assert_equal 'Asr 2h 14m', data['text']
   end
 
   def status_with(pill)
@@ -88,7 +88,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{countdown}', 'compact_countdown' => true), now: now
     )
-    assert_equal "\u200E2:14", JSON.parse(json)['text']
+    assert_equal '2:14', JSON.parse(json)['text']
   end
 
   def test_compact_countdown_under_an_hour_stays_minutes
@@ -96,7 +96,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{countdown}', 'compact_countdown' => true), now: now
     )
-    assert_equal "\u200E26m", JSON.parse(json)['text']
+    assert_equal '26m', JSON.parse(json)['text']
   end
 
   def test_non_compact_countdown_unchanged
@@ -104,7 +104,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{countdown}', 'compact_countdown' => false), now: now
     )
-    assert_equal "\u200E2h 14m", JSON.parse(json)['text']
+    assert_equal '2h 14m', JSON.parse(json)['text']
   end
 
   def test_icon_preset_renders_empty_text
@@ -122,7 +122,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{prayer} {countdown}', 'quiet_until_minutes' => 60), now: now
     )
-    assert_equal "Asr \u200E2h 14m", JSON.parse(json)['text'],
+    assert_equal 'Asr 2h 14m', JSON.parse(json)['text'],
                  'waybar has no glyph to collapse to, so quiet must not apply'
   end
 
@@ -142,15 +142,18 @@ class TestWaybar < Minitest::Test
     assert_includes text, "\u200E2h 14m"
   end
 
-  # Latin prayer names are unaffected in substance: the anchor is applied
-  # unconditionally (mirroring Model.js, which does not special-case RTL
-  # either), so the LRM is present here too. It is a zero-width, non-
-  # rendering character, so the on-screen text is unchanged from before
-  # this fix; only the underlying bytes gained the anchor.
-  def test_latin_prayer_name_still_renders_with_anchor
+  # The anchor is scoped to RTL prayer names (see the comment in
+  # Waybar#render_from_status): waybar is a released, widely-installed
+  # code path, so a Latin prayer name must render with NO anchor at all --
+  # byte-identical to what shipped before this fix, not merely visually
+  # unchanged. Assert the LRM codepoint is absent, not just that the
+  # visible text looks right.
+  def test_latin_prayer_name_renders_without_anchor
     now = Time.new(2026, 4, 22, 13, 4, 0, 10800)   # 2h 14m before Asr
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
       format: '{prayer} {countdown}', soon_minutes: 10)
-    assert_equal "Asr \u200E2h 14m", JSON.parse(json)['text']
+    text = JSON.parse(json)['text']
+    assert_equal 'Asr 2h 14m', text
+    refute_includes text, "\u200E"
   end
 end

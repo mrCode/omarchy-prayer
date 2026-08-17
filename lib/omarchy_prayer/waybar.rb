@@ -9,6 +9,12 @@ module OmarchyPrayer
       fajr_tomorrow: 'Fajr'
     }.freeze
 
+    # Hebrew (U+0590-05FF), Arabic (U+0600-06FF), Arabic Supplement
+    # (U+0750-077F). Covers `[bar] names = "arabic"` (the only shipped RTL
+    # preset) plus Hebrew "for free" as the same class of problem, without
+    # pulling in a full bidi-category library.
+    RTL_CHARS = /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F]/.freeze
+
     module_function
 
     # The one renderer. Consumes the same Status structure the Omarchy 4
@@ -19,15 +25,25 @@ module OmarchyPrayer
       secs = nx['epoch'] - now.to_i
 
       # The countdown substitution is prefixed with U+200E (LEFT-TO-RIGHT
-      # MARK). When {prayer} is an RTL string (e.g. Arabic "العشاء" from
-      # `names = "arabic"`), the bidi algorithm can pull the countdown's
-      # leading LTR digits across the RTL run, visually reordering
-      # "1h 26m" around the prayer name. The LRM anchors the countdown's
-      # direction without adding a visible character. This mirrors
-      # Model.js#renderPill in the Quickshell widget (share/omarchy-shell-
-      # plugin/Model.js) — the two renderers share one Status structure and
-      # must not disagree, so do not "clean up" this invisible character.
-      countdown = "\u200E#{format_countdown(secs, pill['compact_countdown'] == true)}"
+      # MARK) ONLY when {prayer} is an RTL string (e.g. Arabic "العشاء" from
+      # `names = "arabic"`). In that case the bidi algorithm can pull the
+      # countdown's leading LTR digits across the RTL run, visually
+      # reordering "1h 26m" around the prayer name; the LRM anchors the
+      # countdown's direction without adding a visible character. This
+      # mirrors where Model.js#renderPill in the Quickshell widget (share/
+      # omarchy-shell-plugin/Model.js) applies the same anchor -- do not
+      # "clean up" this invisible character where it does appear.
+      #
+      # The condition is deliberate, not an oversight: waybar is a
+      # released, widely-installed code path, and anchoring unconditionally
+      # (as Model.js does -- the widget carries no legacy-compatibility
+      # burden) would silently change the `text` bytes for every
+      # Latin-default install to fix a defect that only manifests for the
+      # opt-in `names = "arabic"` preset. Scoping the anchor to actual RTL
+      # prayer names keeps Latin output byte-identical to what shipped
+      # before this fix.
+      plain_countdown = format_countdown(secs, pill['compact_countdown'] == true)
+      countdown = nx['pretty'].to_s.match?(RTL_CHARS) ? "\u200E#{plain_countdown}" : plain_countdown
 
       text = pill['format']
         .gsub('{city}',      status['city'].to_s)
