@@ -24,6 +24,30 @@ default; see [[project-adhan-muted-default]].
 
 ---
 
+## START HERE next session
+
+Everything is shipped and every repo is clean and pushed. There is no work in
+flight. Two items are open, neither urgent:
+
+1. **Click the design-picker chips.** Open the panel (left-click the pill) and
+   click Full / Minimal / Icon. This is the ONLY thing never verified — no
+   input-injection tooling existed during the build, so the full data path was
+   exercised via the CLI instead. The chips use the same `Ui/Button` as the
+   working Mute/Adhan buttons, so risk is low. If a click does nothing, check
+   `journalctl --user | grep -i prayer` first and remember that `bar.run` is
+   fire-and-forget — a failing command is silent.
+2. **Marketplace listing** — issue #456 on HANCORE-linux/omarchy-plugin-marketplace
+   is awaiting maintainer review. The listed repo (mrCode/omarchy-prayer-plugin)
+   now carries 0.3.0. Nothing to do but wait.
+
+Optional, only if the user asks: the "Possible follow-ups" section near the
+bottom, and the accepted-with-rulings list — do NOT treat those as bugs.
+
+Machine state: `[audio].enabled = false` (adhan silent, notifications fire).
+Bar shows the `full` preset, Latin names.
+
+---
+
 ## Context in one paragraph
 
 The user upgraded to Omarchy 4.0.0 ("Quarto"), which replaced waybar with a
