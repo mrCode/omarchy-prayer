@@ -116,7 +116,7 @@ def bar_preset(name)
   if name.nil? || name == 'list'
     active = bar_config_or_abort.bar_preset
     presets.each { |p| puts "#{p == active ? '*' : ' '} #{p}" }
-    puts '  custom' if active == 'custom'
+    puts '* custom' if active == 'custom'
     return
   end
   unless presets.include?(name)

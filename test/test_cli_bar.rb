@@ -23,9 +23,26 @@ class TestCliBar < Minitest::Test
     soon_threshold_minutes = 10
   TOML
 
+  CUSTOM_CONFIG = <<~TOML.freeze
+    [location]
+    latitude  = 24.7136
+    longitude = 46.6753
+    city      = "Riyadh"
+    country   = "SA"
+
+    [bar]
+    # hand-edited — matches no built-in preset
+    format = "{prayer} at {time}"
+  TOML
+
   def seed
     FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
     File.write(OmarchyPrayer::Paths.config_file, CONFIG)
+  end
+
+  def seed_custom
+    FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+    File.write(OmarchyPrayer::Paths.config_file, CUSTOM_CONFIG)
   end
 
   def text
@@ -72,6 +89,28 @@ class TestCliBar < Minitest::Test
       assert_match(/^\* full$/, out)
       assert_match(/^  minimal$/, out)
       assert_match(/^  icon$/, out)
+    end
+  end
+
+  # Regression: when the stored format matches no built-in preset,
+  # Config#bar_preset reports 'custom' — the list must mark that row active
+  # (and only that row), since `bar preset list` is the discovery UI and must
+  # always answer "which am I on?".
+  def test_preset_list_marks_custom_active_when_format_matches_no_preset
+    with_isolated_home do
+      seed_custom
+      out, status = run_bar('preset', 'list')
+      assert_equal 0, status
+      assert_match(/^\* custom$/, out)
+      assert_match(/^  full$/, out)
+      assert_match(/^  minimal$/, out)
+      assert_match(/^  icon$/, out)
+      refute_match(/^\* full$/, out)
+      refute_match(/^\* minimal$/, out)
+      refute_match(/^\* icon$/, out)
+
+      status_out, = run_bar('status')
+      assert_match(/\Apreset\s+custom/, status_out)
     end
   end
 
