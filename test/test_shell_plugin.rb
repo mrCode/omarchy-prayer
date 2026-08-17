@@ -9,7 +9,7 @@ class TestShellPlugin < Minitest::Test
   def fake_source(home)
     dir = File.join(home, 'pkg', 'shell-plugin')
     FileUtils.mkdir_p(dir)
-    File.write(File.join(dir, 'manifest.json'), '{"id":"prayer.times"}')
+    File.write(File.join(dir, 'manifest.json'), '{"id":"io.github.mrcode.prayer-times"}')
     File.write(File.join(dir, 'BarWidget.qml'), '// widget')
     dir
   end
@@ -30,12 +30,12 @@ class TestShellPlugin < Minitest::Test
       log  = with_shims(home, %w[omarchy-shell])
       done = install(src: fake_source(home))
 
-      target = File.join(home, '.config', 'omarchy', 'plugins', 'prayer.times')
+      target = File.join(home, '.config', 'omarchy', 'plugins', 'io.github.mrcode.prayer-times')
       assert File.exist?(File.join(target, 'manifest.json'))
       assert File.exist?(File.join(target, 'BarWidget.qml'))
       assert_equal '0.2.0', File.read(File.join(target, '.version')).strip
       assert_equal 1, enable_calls(log).length
-      assert done.any? { |d| d.include?('prayer.times') }, done.inspect
+      assert done.any? { |d| d.include?('io.github.mrcode.prayer-times') }, done.inspect
     end
   end
 
@@ -99,6 +99,79 @@ class TestShellPlugin < Minitest::Test
       assert_equal 1, backups.length
       assert_equal '{"bar":{}}', File.read(backups.first)
       assert done.any? { |d| d.include?('backed up') }, done.inspect
+    end
+  end
+
+  # --- legacy id migration (prayer.times -> io.github.mrcode.prayer-times) ---
+
+  def legacy_dir(home)
+    File.join(home, '.config', 'omarchy', 'plugins', 'prayer.times')
+  end
+
+  def seed_legacy_install(home, on_bar: true)
+    FileUtils.mkdir_p(legacy_dir(home))
+    File.write(File.join(legacy_dir(home), 'manifest.json'), '{"id":"prayer.times"}')
+    FileUtils.mkdir_p(File.join(home, '.config', 'omarchy'))
+    layout = on_bar ? '{"id":"prayer.times"},{"id":"omarchy.tray"}' : '{"id":"omarchy.tray"}'
+    File.write(OmarchyPrayer::ShellPlugin.shell_json_path,
+               "{\"bar\":{\"layout\":{\"right\":[#{layout}]}}}")
+  end
+
+  def test_legacy_plugin_directory_is_removed
+    with_isolated_home do |home|
+      with_shims(home, %w[omarchy-shell])
+      seed_legacy_install(home)
+      install(src: fake_source(home))
+      refute Dir.exist?(legacy_dir(home)), 'stale plugin dir must not linger'
+    end
+  end
+
+  def test_legacy_bar_entry_is_renamed_in_place
+    with_isolated_home do |home|
+      with_shims(home, %w[omarchy-shell])
+      seed_legacy_install(home)
+      install(src: fake_source(home))
+
+      shell_json = File.read(OmarchyPrayer::ShellPlugin.shell_json_path)
+      refute_includes shell_json, '"prayer.times"'
+      assert_includes shell_json, '"io.github.mrcode.prayer-times"'
+      assert_operator shell_json.index('io.github.mrcode.prayer-times'),
+                      :<, shell_json.index('omarchy.tray'),
+                      'renaming must preserve the widget position on the bar'
+    end
+  end
+
+  def test_legacy_migration_backs_up_shell_json
+    with_isolated_home do |home|
+      with_shims(home, %w[omarchy-shell])
+      seed_legacy_install(home)
+      done = install(src: fake_source(home))
+      backups = Dir[File.join(home, '.config', 'omarchy', 'shell.json.bak.omarchy-prayer-*')]
+      refute_empty backups
+      assert done.any? { |d| d.match?(/renamed|migrat/i) }, done.inspect
+    end
+  end
+
+  # A user who removed the old widget should not get the new one forced back.
+  def test_legacy_removal_is_respected
+    with_isolated_home do |home|
+      log = with_shims(home, %w[omarchy-shell])
+      seed_legacy_install(home, on_bar: false)
+      FileUtils.mkdir_p(OmarchyPrayer::Paths.state_dir)
+      FileUtils.touch(OmarchyPrayer::ShellPlugin.enabled_marker)
+      install(src: fake_source(home))
+      shell_json = File.read(OmarchyPrayer::ShellPlugin.shell_json_path)
+      refute_includes shell_json, 'io.github.mrcode.prayer-times',
+                      'must not add the widget back to a bar it was removed from'
+      assert_empty enable_calls(log)
+    end
+  end
+
+  def test_fresh_install_without_legacy_is_unaffected
+    with_isolated_home do |home|
+      with_shims(home, %w[omarchy-shell])
+      done = install(src: fake_source(home))
+      refute done.any? { |d| d.match?(/renamed|migrat/i) }, done.inspect
     end
   end
 

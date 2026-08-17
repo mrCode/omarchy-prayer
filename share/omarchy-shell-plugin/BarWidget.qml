@@ -16,7 +16,7 @@ import "Model.js" as Model
 // once a second to re-derive a countdown would be waste.
 BarWidget {
   id: root
-  moduleName: "prayer.times"
+  moduleName: "io.github.mrcode.prayer-times"
 
   // Parsed status JSON, or null when unavailable.
   property var prayerData: null
@@ -136,7 +136,7 @@ BarWidget {
   }
 
   IpcHandler {
-    target: "prayer.times"
+    target: "io.github.mrcode.prayer-times"
 
     function refresh(): void { root.broadcast("refresh") }
     function open(): void    { root.open() }

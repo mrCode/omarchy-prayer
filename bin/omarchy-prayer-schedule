@@ -74,5 +74,5 @@ puts "omarchy-prayer: scheduled #{OmarchyPrayer::Today::ORDER.size} prayers for 
 # Nudge the Omarchy 4 bar widget so new times show immediately rather than
 # waiting out its poll. Best-effort: `-q` makes this a no-op when the shell
 # isn't running, and the scheduler's job is done either way.
-system('omarchy-shell', '-q', 'prayer.times', 'refresh',
+system('omarchy-shell', '-q', 'io.github.mrcode.prayer-times', 'refresh',
        out: File::NULL, err: File::NULL)

@@ -25,7 +25,7 @@ The first `omarchy-prayer` invocation runs `setup` automatically: it downloads t
 
 Setup detects your bar at runtime:
 
-- **Omarchy 4** — copies the `prayer.times` Quickshell plugin into `~/.config/omarchy/plugins/` and places it on your bar (backing up `shell.json` first).
+- **Omarchy 4** — copies the `io.github.mrcode.prayer-times` Quickshell plugin into `~/.config/omarchy/plugins/` and places it on your bar (backing up `shell.json` first).
 - **Omarchy 3 / other Hyprland** — injects the `custom/prayer` module into `~/.config/waybar/config.jsonc` (your original is backed up to `config.jsonc.bak.omarchy-prayer-<ts>`).
 - **Neither** — says so, and changes nothing.
 
@@ -55,7 +55,7 @@ cd omarchy-prayer
 `omarchy-prayer setup` installs and places it automatically. To do it by hand:
 
 ```bash
-omarchy-shell shell enablePlugin prayer.times '{"section":"right","index":0}'
+omarchy-shell shell enablePlugin io.github.mrcode.prayer-times '{"section":"right","index":0}'
 ```
 
 | Click  | Action |

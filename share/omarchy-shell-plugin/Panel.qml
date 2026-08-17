@@ -7,7 +7,7 @@ import "Model.js" as Model
 // BarWidget.injectPanel) so there is exactly one copy of the parsed status.
 Panel {
   id: root
-  moduleName: "prayer.times"
+  moduleName: "io.github.mrcode.prayer-times"
   ipcTarget: ""
   manageIpc: false
 

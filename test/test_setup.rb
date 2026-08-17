@@ -288,13 +288,13 @@ class TestSetup < Minitest::Test
       # asset's presence.
       src = File.join(home, 'pkg', 'shell-plugin')
       FileUtils.mkdir_p(src)
-      File.write(File.join(src, 'manifest.json'), '{"id":"prayer.times"}')
+      File.write(File.join(src, 'manifest.json'), '{"id":"io.github.mrcode.prayer-times"}')
 
       done = []
       OmarchyPrayer::Setup.ensure_bar_integration(
         io: StringIO.new, done: done, plugin_source: src
       )
-      assert done.any? { |d| d.include?('prayer.times') },
+      assert done.any? { |d| d.include?('io.github.mrcode.prayer-times') },
              "expected shell plugin work, got: #{done.inspect}"
     ensure
       ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
