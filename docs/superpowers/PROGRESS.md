@@ -4,20 +4,19 @@
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-08-17
-**Branch:** `feat/bar-presets` (not yet merged to `master`)
-**Status:** v0.3.0 code-complete, version-bumped, and green on `feat/bar-presets`.
-**Release is PENDING** — no `v0.3.0` tag, nothing pushed to GitHub or AUR, the
-marketplace plugin repo has an unpushed sync commit only. Previously shipped:
-GitHub tags `v0.2.0` / `v0.2.1` / `v0.2.2`; AUR `omarchy-prayer 0.2.2-1`;
-installed locally. Also listed for the community plugin marketplace.
+**Branch:** merged to `master` (PR #6, merge commit)
+**Status:** **v0.3.0 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.0`; AUR
+`omarchy-prayer 0.3.0-1`; installed locally and verified through PATH; plugin
+repo synced and pushed. Also listed for the community plugin marketplace.
 Suite: **249 runs, 766–767 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
 (assertion count differs by one run to run; not a failure — see task-10 report).
 
-**Outstanding:** merge `feat/bar-presets`, tag `v0.3.0`, push GitHub, push the
-plugin repo (`git -C ../omarchy-prayer-plugin push origin master`), bump the
-AUR `PKGBUILD`, and verify through PATH. None of that was authorized for this
-session — see `.superpowers/sdd/2026-08-17-bar-presets/task-10-report.md`.
+**Outstanding:** one verification only — literal mouse-click delivery on the
+design-picker chips has never been exercised (no input-injection tooling was
+available during the build). The chips use the same `Ui/Button` component as the
+working Mute/Adhan buttons in the same panel, so risk is low; a single human
+click settles it.
 
 **Current machine state:** `[audio].enabled = false` (user turned the adhan off
 after testing) — notifications fire, audio does not. This is also the shipped
