@@ -43,8 +43,14 @@ BarWidget {
 
   // In a collapsed state the pill shows no text, so the times have to stay
   // reachable without a click.
+  //
+  // Same bidi anchor as Model.renderPill's {countdown} substitution: with an
+  // RTL prayer name (prayerData.next.pretty), the countdown's leading LTR
+  // digits can get pulled across the RTL run and reorder visually. The
+  // U+200E (LEFT-TO-RIGHT MARK) prefix anchors the countdown without adding
+  // a visible character or reordering this concatenation.
   readonly property string tooltipLine: ready
-    ? (prayerData.next.pretty + " " + countdown)
+    ? (prayerData.next.pretty + " ‎" + countdown)
     : ""
 
   readonly property bool soon: ready
