@@ -1,12 +1,21 @@
-# PROGRESS — v0.2.0 Omarchy 4 support
+# PROGRESS — Omarchy 4 support (v0.2.0 / v0.2.1)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
-**Last updated:** 2026-08-16
-**Branch:** merged to `master`; released as **v0.2.0**
-**Status:** SHIPPED. Latest **v0.2.1** (adhan on/off toggle in the panel).
-GitHub tags v0.2.0/v0.2.1, AUR `omarchy-prayer 0.2.1-1`, installed and verified. Suite: 174 runs, 496 assertions, 0 failures.
+**Last updated:** 2026-08-17
+**Branch:** `master` (feature branch merged and released)
+**Status:** SHIPPED and fully verified on hardware. Latest **v0.2.1**.
+GitHub tags `v0.2.0` / `v0.2.1`; AUR `omarchy-prayer 0.2.1-1`; installed locally.
+Suite: **184 runs, 524 assertions, 0 failures** — green under both `bundle exec
+rake test` and the bundler-less `check()` invocation.
+
+**Nothing is outstanding.** The work that opened this effort is complete; only
+the unscheduled follow-ups at the bottom remain, and none are committed to.
+
+**Current machine state:** `[audio].enabled = false` (user turned the adhan off
+after testing) — notifications fire, audio does not. This is also the shipped
+default; see [[project-adhan-muted-default]].
 
 ---
 
@@ -107,13 +116,21 @@ Things that cost time and would cost it again:
 
 ## Verified live on Omarchy 4.0.0
 
+Confirmed by observation on the real machine, not just by tests:
+
 - Widget renders on the bar, countdown ticks, panel opens, IPC refresh works
+- All four pill states seen: normal, amber "soon", dimmed muted, error
 - `setup` installs + places the plugin, backs up `shell.json`
 - Removing the widget from the bar survives a re-run of `setup`
 - `[waybar]` → `[bar]` migration ran against the real config
 - DND on → notification suppressed; DND off → notification fires
 - Theme resolves the live Everforest palette (`muted` ≠ background)
 - `omarchy-prayer-waybar` output unchanged
+- **Full daily cycle at Isha 2026-08-16:** pre-notification fired 19:47:00,
+  on-time fired 19:57:00, adhan played to completion (~3m21s), and the widget
+  rolled over to tomorrow's Fajr and dropped out of amber — all unattended
+- Adhan on/off button toggles correctly; mosque and muted-speaker glyphs both
+  render in the bar font
 
 ## Release notes (v0.2.0, 2026-08-16)
 
