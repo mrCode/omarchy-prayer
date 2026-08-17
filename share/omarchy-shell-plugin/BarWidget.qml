@@ -49,7 +49,12 @@ BarWidget {
   readonly property string glyph: "󱠧"
 
   function refresh() {
-    if (!statusProc.running) statusProc.running = true
+    if (statusProc.running) return
+    statusProc.running = true
+    // Quickshell does NOT emit onExited when the binary is missing — it only
+    // logs "Process failed to start". Without this watchdog the widget would
+    // sit on an empty pill forever, so treat "no data within 5s" as failure.
+    startWatchdog.restart()
   }
 
   function recomputeCountdown() {
@@ -152,6 +157,7 @@ BarWidget {
         try {
           root.prayerData = JSON.parse(text)
           root.errorText = ""
+          startWatchdog.stop()
           root.recomputeCountdown()
         } catch (e) {
           root.prayerData = null
@@ -166,11 +172,11 @@ BarWidget {
     }
 
     onExited: function(exitCode) {
-      if (exitCode !== 0) {
-        root.prayerData = null
-        root.errorText = "omarchy-prayer exited " + exitCode
-          + " — run `omarchy-prayer` once to set it up"
-      }
+      startWatchdog.stop()
+      if (exitCode === 0) return
+      root.prayerData = null
+      root.errorText = "omarchy-prayer exited " + exitCode
+        + " — run `omarchy-prayer` once to set it up"
     }
   }
 
@@ -190,6 +196,19 @@ BarWidget {
     running: root.ready
     repeat: true
     onTriggered: root.recomputeCountdown()
+  }
+
+  // Fires only when the status command produced neither data nor an exit —
+  // i.e. the binary is missing. Someone who installed this plugin on its own
+  // (from the marketplace) has the widget but not the CLI it fronts.
+  Timer {
+    id: startWatchdog
+    interval: 5000
+    repeat: false
+    onTriggered: {
+      if (root.prayerData !== null) return
+      root.errorText = "omarchy-prayer is not installed — run: yay -S omarchy-prayer"
+    }
   }
 
   Timer {
