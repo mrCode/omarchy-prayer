@@ -84,6 +84,90 @@ def cmd_audio(argv)
   puts state ? 'adhan audio: on' : 'adhan audio: off'
 end
 
+def cmd_bar(argv)
+  require 'omarchy_prayer/bar_preset'
+  require 'omarchy_prayer/bar_setting'
+  require 'omarchy_prayer/prayer_names'
+  require 'omarchy_prayer/config'
+
+  sub = (argv[0] || 'status').downcase
+  arg = argv[1]
+
+  case sub
+  when 'preset'      then bar_preset(arg)
+  when 'names'       then bar_names(arg)
+  when 'compact'     then bar_compact(arg)
+  when 'quiet'       then bar_quiet(arg)
+  when 'status'      then bar_status
+  else
+    warn 'usage: omarchy-prayer bar [preset|names|compact|quiet|status]'
+    exit 1
+  end
+end
+
+def bar_config_or_abort
+  OmarchyPrayer::Config.load
+rescue OmarchyPrayer::Config::MissingError => e
+  abort "omarchy-prayer: #{e.message}"
+end
+
+def bar_preset(name)
+  presets = OmarchyPrayer::BarPreset.names
+  if name.nil? || name == 'list'
+    active = bar_config_or_abort.bar_preset
+    presets.each { |p| puts "#{p == active ? '*' : ' '} #{p}" }
+    puts '  custom' if active == 'custom'
+    return
+  end
+  unless presets.include?(name)
+    warn "unknown preset #{name.inspect} (valid: #{presets.join(', ')})"
+    exit 1
+  end
+  OmarchyPrayer::BarSetting.set('format', OmarchyPrayer::BarPreset.format_for(name))
+  puts "bar preset: #{name}"
+end
+
+def bar_names(script)
+  scripts = OmarchyPrayer::PrayerNames::SCRIPTS
+  unless scripts.include?(script)
+    warn "usage: omarchy-prayer bar names <#{scripts.join('|')}>"
+    exit 1
+  end
+  OmarchyPrayer::BarSetting.set('names', script)
+  puts "bar names: #{script}"
+end
+
+def bar_compact(value)
+  case value
+  when 'on', 'true'   then state = true
+  when 'off', 'false' then state = false
+  else
+    warn 'usage: omarchy-prayer bar compact <on|off>'
+    exit 1
+  end
+  OmarchyPrayer::BarSetting.set('compact_countdown', state)
+  puts "bar compact countdown: #{state ? 'on' : 'off'}"
+end
+
+def bar_quiet(value)
+  unless value.to_s.match?(/\A\d+\z/)
+    warn 'usage: omarchy-prayer bar quiet <minutes>   (0 disables)'
+    exit 1
+  end
+  minutes = value.to_i
+  OmarchyPrayer::BarSetting.set('quiet_until_minutes', minutes)
+  puts minutes.zero? ? 'bar quiet: off' : "bar quiet: collapses beyond #{minutes}m"
+end
+
+def bar_status
+  cfg = bar_config_or_abort
+  puts "preset            #{cfg.bar_preset}"
+  puts "format            #{cfg.bar_format.inspect}"
+  puts "names             #{cfg.names_script}"
+  puts "compact countdown #{cfg.compact_countdown? ? 'on' : 'off'}"
+  puts "quiet until       #{cfg.quiet_until_minutes.zero? ? 'off' : "#{cfg.quiet_until_minutes}m"}"
+end
+
 def cmd_refresh
   schedule = File.expand_path('omarchy-prayer-schedule', __dir__)
   exec(schedule)
@@ -169,6 +253,7 @@ when 'refresh'    then cmd_refresh
 when 'relocate'   then cmd_relocate(ARGV[1..] || [])
 when 'mute-today' then cmd_mute_today
 when 'audio'      then cmd_audio(ARGV[1..] || [])
+when 'bar'        then cmd_bar(ARGV[1..] || [])
 when 'adhans'     then cmd_adhans(ARGV[1..] || [])
 when 'setup'      then cmd_setup
 when '-h', '--help', 'help'
@@ -184,6 +269,7 @@ when '-h', '--help', 'help'
       relocate      update [location] (re-detect via IP, or pass --lat/--lon/--city/--country)
       mute-today    toggle today-only mute flag
       audio         adhan audio on|off|toggle|status
+      bar           pill design: preset|names|compact|quiet|status
       adhans        manage adhan audio library (list|download|set|current)
       setup         download default adhans, patch waybar config, enable timers
   USAGE
