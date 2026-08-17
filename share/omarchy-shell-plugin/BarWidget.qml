@@ -36,6 +36,15 @@ BarWidget {
 
   readonly property bool muted: ready && prayerData.muted === true
 
+  // Standing [audio].enabled setting — distinct from `muted`, which is the
+  // today-only suppression marker.
+  //
+  // `audio_enabled` only exists in 0.2.1+. On an older CLI the field is absent,
+  // and reporting that as "off" would state the opposite of the truth — so
+  // knownAudioState gates every piece of audio UI.
+  readonly property bool audioStateKnown: ready && prayerData.audio_enabled !== undefined
+  readonly property bool audioEnabled: audioStateKnown && prayerData.audio_enabled === true
+
   // Nerd Font mosque glyph.
   readonly property string glyph: "󱠧"
 
@@ -60,6 +69,12 @@ BarWidget {
   function muteToday() {
     runCommand("omarchy-prayer mute-today")
     // Give the CLI a moment to write the marker before re-reading it.
+    muteRefreshTimer.restart()
+  }
+
+  function toggleAudio() {
+    runCommand("omarchy-prayer audio toggle")
+    // Give the CLI a moment to rewrite config.toml before re-reading it.
     muteRefreshTimer.restart()
   }
 
@@ -188,7 +203,10 @@ BarWidget {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.vertical ? root.glyph : (root.glyph + "  " + root.pillText)
+    text: {
+      var lead = root.glyph + (root.audioStateKnown && !root.audioEnabled ? " \uf026" : "")
+      return root.vertical ? lead : (lead + "  " + root.pillText)
+    }
     fontSize: Style.font.body
     horizontalMargin: 8.75
     verticalPadding: 8.75

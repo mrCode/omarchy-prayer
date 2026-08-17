@@ -65,8 +65,25 @@ omarchy-shell shell enablePlugin prayer.times '{"section":"right","index":0}'
 | Middle | Open the TUI in a floating terminal |
 
 The panel lists the five prayers with the next one highlighted, plus qibla
-direction, calculation method, and time source, with **Mute today** and
-**Stop adhan** buttons.
+direction, calculation method, and time source, with **Mute today**,
+**Adhan on/off**, and **Stop adhan** buttons.
+
+Two different controls, easy to confuse:
+
+| Control | Scope |
+|---------|-------|
+| **Mute today** | Suppresses notification + adhan until midnight, then auto-clears |
+| **Adhan on/off** | Standing `[audio].enabled` setting — whether the adhan ever plays |
+
+When the adhan is off, a muted-speaker glyph appears next to the mosque icon on
+the pill. The same setting from the CLI:
+
+```bash
+omarchy-prayer audio status     # on | off
+omarchy-prayer audio on
+omarchy-prayer audio off
+omarchy-prayer audio toggle
+```
 
 ### Waybar widget (Omarchy 3 and other Hyprland setups)
 
@@ -119,6 +136,7 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 | `omarchy-prayer refresh`       | re-run the scheduler                           |
 | `omarchy-prayer relocate`      | re-detect location (IP) or set manually        |
 | `omarchy-prayer mute-today`    | toggle today-only mute flag                    |
+| `omarchy-prayer audio`         | adhan audio on / off / toggle / status         |
 | `omarchy-prayer-stop`          | kill any playing adhan                         |
 | `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
 | `omarchy-prayer setup`         | re-run setup (default adhans + bar widget + timers)|

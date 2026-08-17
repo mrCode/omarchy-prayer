@@ -36,7 +36,10 @@ module OmarchyPrayer
         'qibla'   => { 'degrees' => degrees, 'compass' => Qibla.cardinal(degrees) },
         'method'  => today.method,
         'source'  => today.source,
-        'muted'   => File.exist?(Paths.mute_today),
+        # Two distinct things: `muted` is the today-only suppression marker,
+        # `audio_enabled` is the standing [audio].enabled setting.
+        'muted'         => File.exist?(Paths.mute_today),
+        'audio_enabled' => config.audio_enabled,
         'pill'    => {
           'format'                 => config.bar_format,
           'soon_threshold_minutes' => config.soon_threshold_minutes

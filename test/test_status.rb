@@ -82,6 +82,28 @@ class TestStatus < Minitest::Test
     assert_includes OmarchyPrayer::Qibla::CARDINALS, s['qibla']['compass']
   end
 
+  def test_audio_enabled_reported
+    refute build['audio_enabled'], 'config fixture has audio off'
+
+    loud = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => 'Riyadh' },
+      'audio'    => { 'enabled' => true }
+    )
+    s = OmarchyPrayer::Status.build(today: today, config: loud, now: afternoon)
+    assert s['audio_enabled']
+  end
+
+  def test_muted_and_audio_enabled_are_independent
+    with_isolated_home do
+      s = build
+      refute s['muted'],         'no mute-today marker'
+      refute s['audio_enabled'], 'audio off in config'
+      OmarchyPrayer::Paths.ensure_state_dir
+      FileUtils.touch(OmarchyPrayer::Paths.mute_today)
+      assert build['muted'], 'mute-today is separate from the audio setting'
+    end
+  end
+
   def test_muted_reflects_marker
     with_isolated_home do |_home|
       refute build['muted'], 'not muted with no marker'

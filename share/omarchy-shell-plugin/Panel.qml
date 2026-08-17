@@ -222,6 +222,18 @@ Panel {
           }
 
           Button {
+            // Hidden rather than wrong on a pre-0.2.1 CLI that does not
+            // report audio_enabled.
+            visible: root.hostWidget ? root.hostWidget.audioStateKnown : false
+            text: root.hostWidget && root.hostWidget.audioEnabled ? "Adhan on" : "Adhan off"
+            bordered: true
+            fontSize: Style.font.bodySmall
+            onClicked: {
+              if (root.hostWidget) root.hostWidget.toggleAudio()
+            }
+          }
+
+          Button {
             text: "Stop adhan"
             bordered: true
             fontSize: Style.font.bodySmall
