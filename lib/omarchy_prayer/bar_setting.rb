@@ -34,12 +34,22 @@ module OmarchyPrayer
     def literal(value)
       case value
       when true, false, Integer then value.to_s
-      else "\"#{value}\""
+      else "\"#{escape(value.to_s)}\""
       end
     end
 
+    # Escape backslashes first, then quotes — otherwise a quote's escaping
+    # backslash would itself get re-escaped by the next pass.
+    def escape(str)
+      str.gsub('\\') { '\\\\' }.gsub('"') { '\\"' }
+    end
+
+    def unescape(str)
+      str.gsub('\\"') { '"' }.gsub('\\\\') { '\\' }
+    end
+
     def unquote(raw)
-      raw =~ /\A"(.*)"\z/m ? Regexp.last_match(1) : raw
+      raw =~ /\A"(.*)"\z/m ? unescape(Regexp.last_match(1)) : raw
     end
 
     # Returns nil when the key is not present, so the caller can append.
@@ -59,9 +69,14 @@ module OmarchyPrayer
     end
 
     def append_key(text, key, value)
+      # Normalise first so every element of `text.lines` is newline-terminated.
+      # Without this, a [bar] section at end-of-file with no trailing newline
+      # leaves its last line unterminated; concatenating the new key line
+      # straight onto it would glue the two into one unparseable TOML line.
+      normalized = ensure_trailing_newline(text)
       out = []
       inserted = false
-      lines = text.lines
+      lines = normalized.lines
       lines.each_with_index do |line, i|
         out << line
         next unless !inserted && line.match(/\A\s*\[#{SECTION}\]\s*\z/)
@@ -75,7 +90,15 @@ module OmarchyPrayer
         inserted = true
         break
       end
-      inserted ? out.join : "#{text}\n[#{SECTION}]\n#{key} = #{literal(value)}\n"
+      return out.join if inserted
+
+      separator = normalized.empty? ? '' : "\n"
+      "#{normalized}#{separator}[#{SECTION}]\n#{key} = #{literal(value)}\n"
+    end
+
+    def ensure_trailing_newline(text)
+      return text if text.empty? || text.end_with?("\n")
+      "#{text}\n"
     end
 
     def each_line_with_section(text)
