@@ -105,6 +105,12 @@ BarWidget {
     muteRefreshTimer.restart()
   }
 
+  function setPreset(name) {
+    runCommand("omarchy-prayer bar preset " + name)
+    // Give the CLI a moment to rewrite config.toml before re-reading it.
+    muteRefreshTimer.restart()
+  }
+
   function openTui() {
     runCommand("omarchy-launch-floating-terminal-with-presentation omarchy-prayer")
   }

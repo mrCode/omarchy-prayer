@@ -206,6 +206,45 @@ Panel {
           }
         }
 
+        // ---- Design picker. Hidden on a pre-0.3.0 CLI that does not report
+        //      pill.preset, rather than showing a control that cannot work.
+        Column {
+          visible: root.ready && root.prayerData.pill
+                   && root.prayerData.pill.preset !== undefined
+          width: parent.width
+          spacing: Style.space(5)
+
+          Text {
+            text: "DESIGN"
+            color: Color.muted
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+          }
+
+          Row {
+            width: parent.width
+            spacing: Style.space(6)
+
+            Repeater {
+              model: ["full", "minimal", "icon"]
+
+              Button {
+                required property var modelData
+                readonly property bool active:
+                  root.ready && root.prayerData.pill.preset === modelData
+
+                text: modelData.charAt(0).toUpperCase() + modelData.slice(1)
+                bordered: true
+                selected: active
+                fontSize: Style.font.caption
+                onClicked: {
+                  if (root.hostWidget) root.hostWidget.setPreset(modelData)
+                }
+              }
+            }
+          }
+        }
+
         // ---- Actions.
         Row {
           width: parent.width
