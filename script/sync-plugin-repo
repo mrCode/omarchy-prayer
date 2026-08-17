@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Push share/omarchy-shell-plugin/ to the standalone plugin repository that the
+# Omarchy plugin marketplace lists.
+#
+# The marketplace requires manifest.json, README and LICENSE at the repository
+# root, but here the plugin is one component of a Ruby package — hence a second
+# repo. THIS repo stays the source of truth; that one is a publishing target.
+# Run this after any change to the plugin, before tagging a release.
+#
+#   script/sync-plugin-repo [path-to-plugin-repo]
+#
+set -euo pipefail
+
+SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/share/omarchy-shell-plugin"
+DEST_DIR="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/omarchy-prayer-plugin}"
+
+msg()  { printf '\e[1;34m[sync-plugin]\e[0m %s\n' "$*"; }
+err()  { printf '\e[1;31m[sync-plugin]\e[0m %s\n' "$*" >&2; exit 1; }
+
+[ -d "$SRC_DIR" ]  || err "plugin source not found: $SRC_DIR"
+[ -d "$DEST_DIR" ] || err "plugin repo not found: $DEST_DIR (clone it first)"
+
+VERSION=$(ruby -e 'require "json"; puts JSON.parse(File.read(ARGV[0]))["version"]' "$SRC_DIR/manifest.json")
+msg "syncing plugin v${VERSION} → $DEST_DIR"
+
+# Only the plugin's own files; never clobber the repo's README/LICENSE/.git.
+for f in manifest.json BarWidget.qml Panel.qml Model.js; do
+  cp "$SRC_DIR/$f" "$DEST_DIR/$f"
+done
+
+if ! omarchy plugin validate "$DEST_DIR" >/dev/null 2>&1; then
+  err "omarchy plugin validate failed for $DEST_DIR — not committing"
+fi
+msg "manifest validates"
+
+cd "$DEST_DIR"
+if git diff --quiet; then
+  msg "already up to date — nothing to commit"
+  exit 0
+fi
+
+git add manifest.json BarWidget.qml Panel.qml Model.js
+git commit -m "sync plugin v${VERSION} from omarchy-prayer"
+msg "committed. push with: git -C $DEST_DIR push origin master"
