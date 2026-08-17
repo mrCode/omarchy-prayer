@@ -230,12 +230,10 @@ Panel {
 
               Button {
                 required property var modelData
-                readonly property bool active:
-                  root.ready && root.prayerData.pill.preset === modelData
 
                 text: modelData.charAt(0).toUpperCase() + modelData.slice(1)
                 bordered: true
-                selected: active
+                selected: root.ready && root.prayerData.pill.preset === modelData
                 fontSize: Style.font.caption
                 onClicked: {
                   if (root.hostWidget) root.hostWidget.setPreset(modelData)
