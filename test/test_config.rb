@@ -146,4 +146,62 @@ class TestConfig < Minitest::Test
     )
     assert_equal 'aliased', cfg.waybar_format
   end
+
+  # --- new [bar] keys: names, compact_countdown, quiet_until_minutes, preset
+
+  def test_new_bar_keys_have_defaults
+    cfg = OmarchyPrayer::Config.new('location' => base_location)
+    assert_equal 'latin', cfg.names_script
+    assert_equal false,   cfg.compact_countdown?
+    assert_equal 0,       cfg.quiet_until_minutes
+  end
+
+  def test_bar_preset_is_derived_from_format
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location, 'bar' => { 'format' => '{prayer} {countdown}' }
+    )
+    assert_equal 'minimal', cfg.bar_preset
+  end
+
+  def test_bar_preset_custom_for_handwritten_format
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location, 'bar' => { 'format' => '{prayer} at {time}' }
+    )
+    assert_equal 'custom', cfg.bar_preset
+  end
+
+  def test_icon_preset_is_empty_format
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location, 'bar' => { 'format' => '' }
+    )
+    assert_equal 'icon', cfg.bar_preset
+    assert_equal '', cfg.bar_format
+  end
+
+  def test_names_script_accepts_arabic
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location, 'bar' => { 'names' => 'arabic' }
+    )
+    assert_equal 'arabic', cfg.names_script
+  end
+
+  def test_unknown_names_script_falls_back_to_latin
+    cfg = OmarchyPrayer::Config.new(
+      'location' => base_location, 'bar' => { 'names' => 'klingon' }
+    )
+    assert_equal 'latin', cfg.names_script
+  end
+
+  def test_quiet_until_minutes_coerced
+    loc = base_location
+    assert_equal 60, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => 60 }
+    ).quiet_until_minutes
+    assert_equal 0, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => -5 }
+    ).quiet_until_minutes, 'negative disables'
+    assert_equal 0, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => 'soon' }
+    ).quiet_until_minutes, 'non-numeric disables'
+  end
 end
