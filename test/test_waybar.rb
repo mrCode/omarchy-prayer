@@ -37,7 +37,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
       format: '{prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
-    assert_equal 'Asr 2h 14m', data['text']
+    assert_equal "Asr \u200E2h 14m", data['text']
     assert_equal 'prayer-normal', data['class']
     assert_match(/Fajr.*04:15/, data['tooltip'])
     assert_match(/Asr.*15:18/,  data['tooltip'])
@@ -62,7 +62,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'London',
       format: '{city} · {prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
-    assert_equal 'London · Asr 2h 14m', data['text']
+    assert_equal "London · Asr \u200E2h 14m", data['text']
   end
 
   def test_city_omitted_when_not_in_format
@@ -70,7 +70,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render(today, now: now, city: 'London',
       format: '{prayer} {countdown}', soon_minutes: 10)
     data = JSON.parse(json)
-    assert_equal 'Asr 2h 14m', data['text']
+    assert_equal "Asr \u200E2h 14m", data['text']
   end
 
   def status_with(pill)
@@ -88,7 +88,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{countdown}', 'compact_countdown' => true), now: now
     )
-    assert_equal '2:14', JSON.parse(json)['text']
+    assert_equal "\u200E2:14", JSON.parse(json)['text']
   end
 
   def test_compact_countdown_under_an_hour_stays_minutes
@@ -96,7 +96,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{countdown}', 'compact_countdown' => true), now: now
     )
-    assert_equal '26m', JSON.parse(json)['text']
+    assert_equal "\u200E26m", JSON.parse(json)['text']
   end
 
   def test_non_compact_countdown_unchanged
@@ -104,7 +104,7 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{countdown}', 'compact_countdown' => false), now: now
     )
-    assert_equal '2h 14m', JSON.parse(json)['text']
+    assert_equal "\u200E2h 14m", JSON.parse(json)['text']
   end
 
   def test_icon_preset_renders_empty_text
@@ -122,7 +122,35 @@ class TestWaybar < Minitest::Test
     json = OmarchyPrayer::Waybar.render_from_status(
       status_with('format' => '{prayer} {countdown}', 'quiet_until_minutes' => 60), now: now
     )
-    assert_equal 'Asr 2h 14m', JSON.parse(json)['text'],
+    assert_equal "Asr \u200E2h 14m", JSON.parse(json)['text'],
                  'waybar has no glyph to collapse to, so quiet must not apply'
+  end
+
+  # `[bar] names = "arabic"` makes {prayer} an RTL string (e.g. "العشاء").
+  # Without an anchor, the bidi algorithm can pull the countdown's leading
+  # LTR digits across the RTL run and visually reorder the text (see
+  # share/omarchy-shell-plugin/Model.js#renderPill for the widget-side fix
+  # this mirrors). Assert on the actual codepoints: the LRM (U+200E) must
+  # sit immediately before the countdown digits.
+  def test_arabic_prayer_name_anchors_countdown_with_lrm
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)   # 2h 14m before Isha
+    status = status_with('format' => '{prayer} {countdown}')
+    status['next']['pretty'] = 'العشاء'
+    json = OmarchyPrayer::Waybar.render_from_status(status, now: now)
+    text = JSON.parse(json)['text']
+    assert_equal "العشاء \u200E2h 14m", text
+    assert_includes text, "\u200E2h 14m"
+  end
+
+  # Latin prayer names are unaffected in substance: the anchor is applied
+  # unconditionally (mirroring Model.js, which does not special-case RTL
+  # either), so the LRM is present here too. It is a zero-width, non-
+  # rendering character, so the on-screen text is unchanged from before
+  # this fix; only the underlying bytes gained the anchor.
+  def test_latin_prayer_name_still_renders_with_anchor
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)   # 2h 14m before Asr
+    json = OmarchyPrayer::Waybar.render(today, now: now, city: 'Riyadh',
+      format: '{prayer} {countdown}', soon_minutes: 10)
+    assert_equal "Asr \u200E2h 14m", JSON.parse(json)['text']
   end
 end

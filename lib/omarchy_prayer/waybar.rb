@@ -18,11 +18,22 @@ module OmarchyPrayer
       pill = status['pill']
       secs = nx['epoch'] - now.to_i
 
+      # The countdown substitution is prefixed with U+200E (LEFT-TO-RIGHT
+      # MARK). When {prayer} is an RTL string (e.g. Arabic "العشاء" from
+      # `names = "arabic"`), the bidi algorithm can pull the countdown's
+      # leading LTR digits across the RTL run, visually reordering
+      # "1h 26m" around the prayer name. The LRM anchors the countdown's
+      # direction without adding a visible character. This mirrors
+      # Model.js#renderPill in the Quickshell widget (share/omarchy-shell-
+      # plugin/Model.js) — the two renderers share one Status structure and
+      # must not disagree, so do not "clean up" this invisible character.
+      countdown = "\u200E#{format_countdown(secs, pill['compact_countdown'] == true)}"
+
       text = pill['format']
         .gsub('{city}',      status['city'].to_s)
         .gsub('{prayer}',    nx['pretty'])
         .gsub('{time}',      nx['time'])
-        .gsub('{countdown}', format_countdown(secs, pill['compact_countdown'] == true))
+        .gsub('{countdown}', countdown)
 
       cls = secs / 60 < pill['soon_threshold_minutes'] ? 'prayer-soon' : 'prayer-normal'
       JSON.generate(text: text, class: cls, tooltip: build_tooltip(status))
