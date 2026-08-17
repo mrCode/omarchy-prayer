@@ -80,11 +80,13 @@ module OmarchyPrayer
       @raw['bar']['compact_countdown'] == true
     end
 
-    # 0 disables. Anything negative or non-numeric is treated as disabled
-    # rather than raising — a typo here must never break the bar.
+    # 0 disables. Anything negative, non-numeric, or a non-finite float
+    # (TOML's `inf`/`nan` literals) is treated as disabled rather than
+    # raising — a typo here must never break the bar.
     def quiet_until_minutes
       value = @raw['bar']['quiet_until_minutes']
       return 0 unless value.is_a?(Numeric)
+      return 0 if value.respond_to?(:finite?) && !value.finite?
       value.to_i.negative? ? 0 : value.to_i
     end
 

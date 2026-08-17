@@ -204,4 +204,20 @@ class TestConfig < Minitest::Test
       'location' => loc, 'bar' => { 'quiet_until_minutes' => 'soon' }
     ).quiet_until_minutes, 'non-numeric disables'
   end
+
+  def test_quiet_until_minutes_handles_non_finite_floats
+    loc = base_location
+    assert_equal 0, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => Float::INFINITY }
+    ).quiet_until_minutes, 'positive infinity disables'
+    assert_equal 0, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => -Float::INFINITY }
+    ).quiet_until_minutes, 'negative infinity disables'
+    assert_equal 0, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => Float::NAN }
+    ).quiet_until_minutes, 'NaN disables'
+    assert_equal 45, OmarchyPrayer::Config.new(
+      'location' => loc, 'bar' => { 'quiet_until_minutes' => 45.7 }
+    ).quiet_until_minutes, 'finite float truncates'
+  end
 end
