@@ -1,18 +1,23 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.2.2)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.3.0)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-08-17
-**Branch:** `master` (feature branch merged and released)
-**Status:** SHIPPED and fully verified on hardware. Latest **v0.2.2**.
+**Branch:** `feat/bar-presets` (not yet merged to `master`)
+**Status:** v0.3.0 code-complete, version-bumped, and green on `feat/bar-presets`.
+**Release is PENDING** — no `v0.3.0` tag, nothing pushed to GitHub or AUR, the
+marketplace plugin repo has an unpushed sync commit only. Previously shipped:
 GitHub tags `v0.2.0` / `v0.2.1` / `v0.2.2`; AUR `omarchy-prayer 0.2.2-1`;
 installed locally. Also listed for the community plugin marketplace.
-Suite: **189 runs, 538 assertions, 0 failures** — green under both `bundle exec
-rake test` and the bundler-less `check()` invocation.
+Suite: **249 runs, 766–767 assertions, 0 failures, 1 skip** — green under both
+`bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
+(assertion count differs by one run to run; not a failure — see task-10 report).
 
-**Nothing is outstanding.** The work that opened this effort is complete; only
-the unscheduled follow-ups at the bottom remain, and none are committed to.
+**Outstanding:** merge `feat/bar-presets`, tag `v0.3.0`, push GitHub, push the
+plugin repo (`git -C ../omarchy-prayer-plugin push origin master`), bump the
+AUR `PKGBUILD`, and verify through PATH. None of that was authorized for this
+session — see `.superpowers/sdd/2026-08-17-bar-presets/task-10-report.md`.
 
 **Current machine state:** `[audio].enabled = false` (user turned the adhan off
 after testing) — notifications fire, audio does not. This is also the shipped
@@ -187,6 +192,68 @@ Also note: `omarchy-shell -q <target> <method>` returns success even when the
 target does not exist. Never use `-q` to *verify* anything — drop it when
 checking whether IPC actually works.
 
+## v0.3.0 (2026-08-17) — pill design presets
+
+Three named pill designs, selectable from the panel's chip row or the CLI:
+
+| Preset | Pill reads |
+|---|---|
+| `full` | `Riyadh · Isha 1h 26m` |
+| `minimal` | `Isha 1h 26m` |
+| `icon` | mosque glyph alone; times move to the tooltip and panel |
+
+Also: `omarchy-prayer bar preset|names|compact|quiet|status`, Arabic prayer
+names (`bar names arabic`, pill/panel only — notifications and TUI stay
+English on purpose, so alerts read the same regardless of display setting),
+compact countdown (`1:26` instead of `1h 26m`), and quiet-until-near (collapse
+to the glyph until the prayer is within N minutes).
+
+**Derived preset, not stored** (`lib/omarchy_prayer/bar_preset.rb`): a preset
+is just a `format` string under `[bar]`. `BarPreset.name_for` recovers the
+active name by matching the stored format back against the catalogue, rather
+than a separate `preset = "minimal"` key being persisted alongside it.
+Storing the name redundantly would go stale the moment someone hand-edits
+`format` — the picker would keep highlighting a design the bar isn't actually
+rendering. Deriving it means a hand-written format can never disagree with
+what's on screen: it just falls out as `custom`, chips unhighlighted.
+
+**RTL/bidi finding — real, reproduced on the live bar.** The Arabic preset
+feeds an RTL prayer name (e.g. `العشاء`) into a string that also has a
+trailing LTR countdown (`1h 26m`). Unicode's bidi algorithm can pull the
+countdown's leading digits across the RTL run and visually reorder the pill.
+Both renderers anchor the countdown with a leading U+200E (LEFT-TO-RIGHT
+MARK) — invisible, no visible character added — to pin its direction. Caught
+by testing the Arabic preset on the actual Omarchy 4 bar, not by unit tests
+alone: `Model.js#renderPill` got the anchor first, then `tooltipLine` turned
+out to bypass it and show unanchored text whenever the pill is collapsed
+(icon preset, quiet-until-near) — fixed in `203b8ac`, verified by a
+`journalctl` codepoint dump showing U+200E landing immediately before the
+countdown digits in the resolved tooltip text.
+
+**The waybar anchor is deliberately conditional, not a mirror of Model.js.**
+Round 1 (`5b6049a`) anchored unconditionally in `lib/omarchy_prayer/waybar.rb`,
+matching Model.js exactly. Review pushed back (`e2fbcdf`): waybar is a
+released, widely-installed code path, and anchoring unconditionally would
+change the shipped `text` bytes for 100% of Latin-default installs to fix a
+defect that only manifests under the opt-in `names = "arabic"` preset — the
+"identical by construction" argument doesn't hold because the Quickshell
+widget is new and carries no legacy-compatibility burden that waybar does.
+Fix: detect RTL characters (Hebrew/Arabic/Arabic Supplement ranges) in
+`next.pretty` and anchor only when the prayer name is actually RTL. Latin
+waybar output is now byte-identical to what shipped before either fix; RTL
+output still gets the anchor at the same position Model.js applies it.
+
+**Verification done this session (task 10 — version bump, docs, tests only;
+publication is out of scope, see task-10-report.md):**
+
+- `bundle exec rake test` and `ruby -Ilib -Itest -e 'Dir["test/test_*.rb"]...'`
+  both green: 249 runs, 0 failures, 0 errors, 1 skip (766 vs 767 assertions —
+  run-to-run variance, not a defect)
+- `omarchy plugin validate share/omarchy-shell-plugin` exits 0
+- `./script/sync-plugin-repo` copied + validated + committed locally in
+  `../omarchy-prayer-plugin` (commit `1b960c9`, **not pushed**)
+- No tag created, nothing pushed to any remote, AUR `PKGBUILD` untouched
+
 ## Marketplace listing
 
 - Directory: <https://omarchyplugins.com/> (community, HANCORE-linux/omarchy-plugin-marketplace)
@@ -200,6 +267,29 @@ checking whether IPC actually works.
   dependency is disclosed in the listing and the README, and a 5s watchdog
   reports `omarchy-prayer is not installed` when the binary is missing
   (Quickshell does **not** fire `onExited` in that case).
+
+## Known-and-accepted after the v0.3.0 whole-branch review
+
+Deliberately shipped as-is, with rulings — do not "rediscover" these:
+
+- `Waybar.build_tooltip` has no U+200E anchor, so tooltip lines mirror under
+  `names = arabic`. Cosmetic, waybar-only, information intact.
+- `BarSetting.append_key` can insert a key before a comment block that belongs
+  to the next section, mis-annotating it. Non-issue for the shipped template,
+  where `[bar]` is last.
+- `Model.js` has no automated tests. The final review verified by hand that its
+  `formatCountdown` and `Waybar.format_countdown` agree byte-for-byte across 303
+  inputs, but nothing enforces that going forward.
+- `BarSetting.get` is only called by its own tests; production reads via `Config`.
+- `bar quiet` accepts unbounded minutes; `bar names ARABIC` fails safely but the
+  usage text does not mention case sensitivity.
+
+**The seam lesson from this branch:** both defects the whole-branch review caught
+were the same shape — new code written without knowledge of old code, in a place
+no single task's scope contained. `BarSetting` knew `[bar]` but not `[waybar]`
+(config corruption); the preset catalogue knew the widget's glyph but not
+waybar's lack of one (`icon` renders an empty module). Per-task review cannot
+see these. Budget for a whole-branch pass on anything touching legacy paths.
 
 ## Possible follow-ups (not scheduled)
 

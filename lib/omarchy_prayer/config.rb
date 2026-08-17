@@ -1,5 +1,7 @@
 require 'tomlrb'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/bar_preset'
+require 'omarchy_prayer/prayer_names'
 
 module OmarchyPrayer
   class Config
@@ -19,7 +21,11 @@ module OmarchyPrayer
                            'adhan' => '~/.config/omarchy-prayer/adhan.mp3',
                            'adhan_fajr' => '~/.config/omarchy-prayer/adhan-fajr.mp3',
                            'volume' => 80 },
-      'bar'           => { 'format' => '{city} · {prayer} {countdown}', 'soon_threshold_minutes' => 10 }
+      'bar'           => { 'format' => '{city} · {prayer} {countdown}',
+                           'soon_threshold_minutes' => 10,
+                           'names' => 'latin',
+                           'compact_countdown' => false,
+                           'quiet_until_minutes' => 0 }
     }.freeze
 
     attr_reader :raw
@@ -61,6 +67,28 @@ module OmarchyPrayer
 
     def bar_format;             @raw['bar']['format'];                 end
     def soon_threshold_minutes; @raw['bar']['soon_threshold_minutes']; end
+
+    # Derived, never stored — see BarPreset.
+    def bar_preset; BarPreset.name_for(bar_format); end
+
+    def names_script
+      value = @raw['bar']['names'].to_s
+      PrayerNames::SCRIPTS.include?(value) ? value : PrayerNames::DEFAULT_SCRIPT
+    end
+
+    def compact_countdown?
+      @raw['bar']['compact_countdown'] == true
+    end
+
+    # 0 disables. Anything negative, non-numeric, or a non-finite float
+    # (TOML's `inf`/`nan` literals) is treated as disabled rather than
+    # raising — a typo here must never break the bar.
+    def quiet_until_minutes
+      value = @raw['bar']['quiet_until_minutes']
+      return 0 unless value.is_a?(Numeric)
+      return 0 if value.respond_to?(:finite?) && !value.finite?
+      value.to_i.negative? ? 0 : value.to_i
+    end
 
     # Retained so existing callers keep working after the [waybar] -> [bar]
     # rename.

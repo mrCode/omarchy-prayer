@@ -64,6 +64,29 @@ omarchy-shell shell enablePlugin io.github.mrcode.prayer-times '{"section":"righ
 | Right  | Stop a playing adhan |
 | Middle | Open the TUI in a floating terminal |
 
+### Pill designs
+
+Pick a design from the panel, or from the CLI:
+
+| Preset | Pill reads |
+|---------|-----------|
+| `full` | `Riyadh · Isha 1h 26m` |
+| `minimal` | `Isha 1h 26m` |
+| `icon` | Omarchy 4 widget only: the mosque glyph alone, times in the tooltip and panel. On the waybar module (no glyph of its own) this renders as an **empty module** — avoid it there, or undo with `bar preset full` |
+
+```bash
+omarchy-prayer bar preset list
+omarchy-prayer bar preset minimal
+omarchy-prayer bar names arabic     # العشاء instead of Isha, in the pill and panel
+omarchy-prayer bar compact on       # "1:26" instead of "1h 26m"
+omarchy-prayer bar quiet 60         # glyph only until the prayer is within 60 minutes
+omarchy-prayer bar status
+```
+
+A design is just a `format` string under `[bar]`, so hand-written formats keep
+working — they show as `custom`. Quiet-until-near applies to the Omarchy 4
+widget only; the waybar module has no glyph to collapse to.
+
 The panel lists the five prayers with the next one highlighted, plus qibla
 direction, calculation method, and time source, with **Mute today**,
 **Adhan on/off**, and **Stop adhan** buttons.
@@ -137,6 +160,7 @@ bind = SUPER CTRL, M, exec, omarchy-prayer-stop
 | `omarchy-prayer relocate`      | re-detect location (IP) or set manually        |
 | `omarchy-prayer mute-today`    | toggle today-only mute flag                    |
 | `omarchy-prayer audio`         | adhan audio on / off / toggle / status         |
+| `omarchy-prayer bar`           | pill design: preset / names / compact / quiet   |
 | `omarchy-prayer-stop`          | kill any playing adhan                         |
 | `omarchy-prayer adhans`        | list / download / set curated Sunni adhans     |
 | `omarchy-prayer setup`         | re-run setup (default adhans + bar widget + timers)|

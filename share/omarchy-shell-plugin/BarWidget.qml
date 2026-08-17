@@ -24,12 +24,34 @@ BarWidget {
   property int secsRemaining: 0
 
   readonly property bool ready: prayerData !== null && prayerData.next !== undefined
-  readonly property string countdown: Model.formatCountdown(secsRemaining)
+
+  readonly property bool compactCountdown: ready && prayerData.pill.compact_countdown === true
+  readonly property int quietMinutes: ready ? (prayerData.pill.quiet_until_minutes || 0) : 0
+
+  readonly property string countdown: Model.formatCountdown(secsRemaining, compactCountdown)
+
+  // Collapsed when the preset has no text at all (icon), or while quiet-until-near
+  // applies. Either way only the glyph is painted.
+  readonly property bool collapsed: ready
+    && (String(prayerData.pill.format || "") === ""
+        || Model.shouldCollapse(secsRemaining, quietMinutes))
 
   readonly property string pillText: ready
     ? Model.renderPill(prayerData.pill.format, prayerData.city, prayerData.next.pretty,
                        prayerData.next.time, countdown)
     : "—"
+
+  // In a collapsed state the pill shows no text, so the times have to stay
+  // reachable without a click.
+  //
+  // Same bidi anchor as Model.renderPill's {countdown} substitution: with an
+  // RTL prayer name (prayerData.next.pretty), the countdown's leading LTR
+  // digits can get pulled across the RTL run and reorder visually. The
+  // U+200E (LEFT-TO-RIGHT MARK) prefix anchors the countdown without adding
+  // a visible character or reordering this concatenation.
+  readonly property string tooltipLine: ready
+    ? (prayerData.next.pretty + " ‎" + countdown)
+    : ""
 
   readonly property bool soon: ready
     && Model.isSoon(secsRemaining, prayerData.pill.soon_threshold_minutes)
@@ -79,6 +101,12 @@ BarWidget {
 
   function toggleAudio() {
     runCommand("omarchy-prayer audio toggle")
+    // Give the CLI a moment to rewrite config.toml before re-reading it.
+    muteRefreshTimer.restart()
+  }
+
+  function setPreset(name) {
+    runCommand("omarchy-prayer bar preset " + name)
     // Give the CLI a moment to rewrite config.toml before re-reading it.
     muteRefreshTimer.restart()
   }
@@ -223,8 +251,11 @@ BarWidget {
     anchors.fill: parent
     bar: root.bar
     text: {
+      // The second glyph is U+F026 (muted speaker). Keep the escape rather
+      // than retyping the character \u2014 it is invisible in most editors.
       var lead = root.glyph + (root.audioStateKnown && !root.audioEnabled ? " \uf026" : "")
-      return root.vertical ? lead : (lead + "  " + root.pillText)
+      if (root.vertical || root.collapsed) return lead
+      return lead + "  " + root.pillText
     }
     fontSize: Style.font.body
     horizontalMargin: 8.75
@@ -232,7 +263,8 @@ BarWidget {
     dimmed: root.muted
     active: root.soon
     useActiveColor: true
-    tooltipText: root.errorText !== "" ? root.errorText : "Prayer times"
+    tooltipText: root.errorText !== "" ? root.errorText
+               : (root.collapsed && root.tooltipLine !== "" ? root.tooltipLine : "Prayer times")
 
     onPressed: function(b) {
       if (b === Qt.RightButton) root.stopAdhan()
