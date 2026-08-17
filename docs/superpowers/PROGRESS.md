@@ -268,6 +268,29 @@ publication is out of scope, see task-10-report.md):**
   reports `omarchy-prayer is not installed` when the binary is missing
   (Quickshell does **not** fire `onExited` in that case).
 
+## Known-and-accepted after the v0.3.0 whole-branch review
+
+Deliberately shipped as-is, with rulings — do not "rediscover" these:
+
+- `Waybar.build_tooltip` has no U+200E anchor, so tooltip lines mirror under
+  `names = arabic`. Cosmetic, waybar-only, information intact.
+- `BarSetting.append_key` can insert a key before a comment block that belongs
+  to the next section, mis-annotating it. Non-issue for the shipped template,
+  where `[bar]` is last.
+- `Model.js` has no automated tests. The final review verified by hand that its
+  `formatCountdown` and `Waybar.format_countdown` agree byte-for-byte across 303
+  inputs, but nothing enforces that going forward.
+- `BarSetting.get` is only called by its own tests; production reads via `Config`.
+- `bar quiet` accepts unbounded minutes; `bar names ARABIC` fails safely but the
+  usage text does not mention case sensitivity.
+
+**The seam lesson from this branch:** both defects the whole-branch review caught
+were the same shape — new code written without knowledge of old code, in a place
+no single task's scope contained. `BarSetting` knew `[bar]` but not `[waybar]`
+(config corruption); the preset catalogue knew the widget's glyph but not
+waybar's lack of one (`icon` renders an empty module). Per-task review cannot
+see these. Budget for a whole-branch pass on anything touching legacy paths.
+
 ## Possible follow-ups (not scheduled)
 
 - Panel has no keyboard navigation beyond close/tab; rows are not focusable.
