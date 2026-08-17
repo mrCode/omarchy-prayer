@@ -3,12 +3,12 @@
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
-**Last updated:** 2026-08-17
+**Last updated:** 2026-08-18
 **Branch:** merged to `master` (PR #6, merge commit)
 **Status:** **v0.3.0 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.0`; AUR
 `omarchy-prayer 0.3.0-1`; installed locally and verified through PATH; plugin
 repo synced and pushed. Also listed for the community plugin marketplace.
-Suite: **249 runs, 766–767 assertions, 0 failures, 1 skip** — green under both
+Suite: **253 runs, 796–797 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
 (assertion count differs by one run to run; not a failure — see task-10 report).
 
