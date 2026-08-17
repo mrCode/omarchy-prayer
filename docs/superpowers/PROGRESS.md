@@ -5,8 +5,8 @@
 
 **Last updated:** 2026-08-16
 **Branch:** merged to `master`; released as **v0.2.0**
-**Status:** SHIPPED. GitHub tag `v0.2.0` (eb5dfab), AUR `omarchy-prayer 0.2.0-1`,
-installed locally and verified working. Suite: 174 runs, 496 assertions, 0 failures.
+**Status:** SHIPPED. Latest **v0.2.1** (adhan on/off toggle in the panel).
+GitHub tags v0.2.0/v0.2.1, AUR `omarchy-prayer 0.2.1-1`, installed and verified. Suite: 174 runs, 496 assertions, 0 failures.
 
 ---
 
@@ -123,6 +123,20 @@ Shipped. One late scare worth remembering: the AUR `check()` runs the suite
 injecting the plugin source instead of monkeypatching, then the tag was moved
 to the fix commit (nothing had consumed it yet) and the checksum recomputed.
 See [[feedback-pkgbuild-check-divergence]].
+
+## v0.2.1 (2026-08-17)
+
+Adds `omarchy-prayer audio on|off|toggle|status`, `audio_enabled` in the status
+JSON, and an **Adhan on/off** button in the panel plus a muted-speaker glyph on
+the pill. Motivated by a real gap: the widget showed the *today-only* mute but
+gave no way to see or change the standing `[audio].enabled` setting.
+
+Lesson (second occurrence): `bar.run` executes via `bash -lc` through **PATH**,
+so it runs the *installed* CLI, and failures are silent. The button appeared
+dead because 0.2.0 had no `audio` subcommand. Verify with
+`bash -lc "omarchy-prayer <cmd>"`, never `ruby -Ilib`. New JSON fields are now
+gated on presence so an older CLI hides the control instead of misreporting it.
+See [[feedback-verify-via-path]].
 
 ## Possible follow-ups (not scheduled)
 
