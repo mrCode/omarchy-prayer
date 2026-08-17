@@ -120,4 +120,36 @@ class TestStatus < Minitest::Test
     assert_equal 'maghrib', parsed['next']['name']
     assert_equal 5, parsed['prayers'].length
   end
+
+  def test_pill_carries_preset_and_display_options
+    s = build
+    assert_equal 'full', s['pill']['preset']
+    assert_equal false,  s['pill']['compact_countdown']
+    assert_equal 0,      s['pill']['quiet_until_minutes']
+  end
+
+  def test_pill_preset_tracks_format
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => 'Riyadh' },
+      'bar'      => { 'format' => '' }
+    )
+    s = OmarchyPrayer::Status.build(today: today, config: cfg, now: afternoon)
+    assert_equal 'icon', s['pill']['preset']
+  end
+
+  def test_names_localised_to_arabic
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => 'Riyadh' },
+      'bar'      => { 'names' => 'arabic' }
+    )
+    s = OmarchyPrayer::Status.build(today: today, config: cfg, now: afternoon)
+    assert_equal 'المغرب', s['next']['pretty']
+    assert_equal 'الفجر',  s['prayers'].first['pretty']
+    assert_equal 'fajr',   s['prayers'].first['name'], 'keys stay machine-readable'
+  end
+
+  def test_names_default_to_latin
+    s = build
+    assert_equal 'Maghrib', s['next']['pretty']
+  end
 end

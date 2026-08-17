@@ -2,6 +2,7 @@ require 'json'
 require 'omarchy_prayer/today'
 require 'omarchy_prayer/qibla'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/prayer_names'
 
 module OmarchyPrayer
   # The single structured view of "what are today's prayer times, right now".
@@ -10,26 +11,22 @@ module OmarchyPrayer
   # so every calculation stays here in Ruby rather than being duplicated in
   # QML. The widget only substitutes placeholders and subtracts timestamps.
   module Status
-    PRETTY = {
-      fajr: 'Fajr', sunrise: 'Sunrise', dhuhr: 'Dhuhr', asr: 'Asr',
-      maghrib: 'Maghrib', isha: 'Isha', fajr_tomorrow: 'Fajr'
-    }.freeze
-
     module_function
 
     def build(today:, config:, now: Time.now)
       next_name, next_at = today.next_prayer(now: now)
       degrees = Qibla.bearing(config.latitude, config.longitude)
+      script  = config.names_script
 
       {
         'city'    => config.city,
         'country' => config.country,
         'date'    => today.date,
         'hijri'   => today.hijri,
-        'prayers' => Today::ORDER.map { |p| prayer_entry(today, p, now) },
+        'prayers' => Today::ORDER.map { |p| prayer_entry(today, p, now, script) },
         'next'    => {
           'name'   => next_name.to_s,
-          'pretty' => PRETTY.fetch(next_name),
+          'pretty' => PrayerNames.pretty(next_name, script: script),
           'time'   => next_at.strftime('%H:%M'),
           'epoch'  => next_at.to_i
         },
@@ -42,7 +39,10 @@ module OmarchyPrayer
         'audio_enabled' => config.audio_enabled,
         'pill'    => {
           'format'                 => config.bar_format,
-          'soon_threshold_minutes' => config.soon_threshold_minutes
+          'soon_threshold_minutes' => config.soon_threshold_minutes,
+          'preset'                 => config.bar_preset,
+          'compact_countdown'      => config.compact_countdown?,
+          'quiet_until_minutes'    => config.quiet_until_minutes
         }
       }
     end
@@ -51,11 +51,11 @@ module OmarchyPrayer
       JSON.generate(build(today: today, config: config, now: now))
     end
 
-    def prayer_entry(today, prayer, now)
+    def prayer_entry(today, prayer, now, script = PrayerNames::DEFAULT_SCRIPT)
       at = today.time_for(prayer)
       {
         'name'   => prayer.to_s,
-        'pretty' => PRETTY.fetch(prayer),
+        'pretty' => PrayerNames.pretty(prayer, script: script),
         'time'   => today.times[prayer],
         'epoch'  => at.to_i,
         'passed' => at <= now
