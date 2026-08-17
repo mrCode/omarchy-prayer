@@ -58,14 +58,44 @@ module OmarchyPrayer
       out = []
       each_line_with_section(text) do |line, section|
         if section == SECTION &&
-           (m = line.match(/\A(\s*#{Regexp.escape(key)}\s*=\s*)(.*?)(\s*)\z/m))
+           (m = line.match(/\A(\s*#{Regexp.escape(key)}\s*=\s*)(.*)\z/m))
           found = true
-          out << "#{m[1]}#{literal(value)}#{m[3]}"
+          _old_value, trailing = split_value_and_trailing(m[2])
+          out << "#{m[1]}#{literal(value)}#{trailing}"
         else
           out << line
         end
       end
       found ? out.join : nil
+    end
+
+    # Splits the text after `key = ` into the old value token and everything
+    # that follows it (inter-token spacing, an optional trailing `# comment`,
+    # and the line terminator), so a rewrite can carry that tail over
+    # untouched instead of swallowing a comment into the old value's lazy
+    # match. A quoted string is scanned for its real closing quote (honouring
+    # `\"` escapes) so a `#` inside the value itself is never mistaken for a
+    # comment marker.
+    def split_value_and_trailing(rest)
+      if rest.start_with?('"')
+        i = 1
+        escaped = false
+        while i < rest.length
+          c = rest[i]
+          if escaped
+            escaped = false
+          elsif c == '\\'
+            escaped = true
+          elsif c == '"'
+            break
+          end
+          i += 1
+        end
+        [rest[0..i], rest[(i + 1)..] || '']
+      else
+        m = rest.match(/\A(\S*)(.*)\z/m)
+        [m[1], m[2]]
+      end
     end
 
     def append_key(text, key, value)

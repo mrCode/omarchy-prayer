@@ -72,7 +72,7 @@ Pick a design from the panel, or from the CLI:
 |---------|-----------|
 | `full` | `Riyadh · Isha 1h 26m` |
 | `minimal` | `Isha 1h 26m` |
-| `icon` | the mosque glyph alone; times in the tooltip and panel |
+| `icon` | Omarchy 4 widget only: the mosque glyph alone, times in the tooltip and panel. On the waybar module (no glyph of its own) this renders as an **empty module** — avoid it there, or undo with `bar preset full` |
 
 ```bash
 omarchy-prayer bar preset list

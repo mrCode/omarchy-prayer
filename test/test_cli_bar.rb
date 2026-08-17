@@ -1,5 +1,7 @@
 require 'test_helper'
 require 'omarchy_prayer/paths'
+require 'tomlrb'
+require 'rbconfig'
 
 # Exercises `omarchy-prayer bar` as a real subprocess (not by calling Ruby
 # methods directly) so argument parsing, exit codes, and stdout/stderr
@@ -35,6 +37,28 @@ class TestCliBar < Minitest::Test
     format = "{prayer} at {time}"
   TOML
 
+  # Pre-0.2.0 shape: only [waybar] exists, [bar] has never been written.
+  # soon_threshold_minutes is a non-default value so a silent revert to the
+  # DEFAULTS constant is distinguishable from a genuine migration.
+  UNMIGRATED_CONFIG = <<~TOML.freeze
+    [location]
+    latitude  = 24.7136
+    longitude = 46.6753
+    city      = "Riyadh"
+    country   = "SA"
+
+    [waybar]
+    # how the pill reads
+    format                 = "{city} · {prayer} {countdown}"
+    soon_threshold_minutes = 37
+  TOML
+
+  # The `omarchy-shell` on this machine's real PATH pings "ok" (quickshell),
+  # so BarDetect tests must run with a PATH that excludes it entirely to
+  # simulate a waybar-only machine. Only ruby's own bindir is kept, since
+  # run_bar spawns a real subprocess via `#!/usr/bin/env ruby`.
+  RUBY_BINDIR = File.dirname(RbConfig.ruby).freeze
+
   def seed
     FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
     File.write(OmarchyPrayer::Paths.config_file, CONFIG)
@@ -43,6 +67,17 @@ class TestCliBar < Minitest::Test
   def seed_custom
     FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
     File.write(OmarchyPrayer::Paths.config_file, CUSTOM_CONFIG)
+  end
+
+  def seed_unmigrated
+    FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+    File.write(OmarchyPrayer::Paths.config_file, UNMIGRATED_CONFIG)
+  end
+
+  def force_waybar_detection(home)
+    FileUtils.mkdir_p(File.join(home, '.config', 'waybar'))
+    File.write(File.join(home, '.config', 'waybar', 'config.jsonc'), '{}')
+    ENV['PATH'] = RUBY_BINDIR
   end
 
   def text
@@ -273,6 +308,72 @@ class TestCliBar < Minitest::Test
       out, status = run_bar('status')
       refute_equal 0, status
       assert_match(/config\.toml not found/, out)
+    end
+  end
+
+  # Regression: `bar` used to be the one entry point that never migrated an
+  # unmigrated config first. BarSetting only knows the literal [bar] header,
+  # so it appended a NEW [bar] section alongside a surviving [waybar]; the
+  # later [waybar]->[bar] rename then produced two [bar] tables, which
+  # Tomlrb refuses to parse — corrupting the config for every entry point.
+  def test_bar_command_migrates_an_unmigrated_waybar_config_first
+    with_isolated_home do
+      seed_unmigrated
+      out, status = run_bar('preset', 'minimal')
+      assert_equal 0, status
+      # stderr (migration notice) and stdout are merged by run_bar; the
+      # migration notice is expected here, on top of the normal confirmation.
+      assert_match(/renamed \[waybar\] to \[bar\]/, out)
+      assert_match(/bar preset: minimal\n\z/, out)
+
+      raw = text
+      assert_equal 1, raw.scan(/^\[bar\]/).length, 'must never produce two [bar] tables'
+      assert_includes raw, '[bar]'
+      refute_includes raw, '[waybar]'
+
+      parsed = Tomlrb.load_file(OmarchyPrayer::Paths.config_file)
+      assert_equal '{prayer} {countdown}', parsed['bar']['format']
+      assert_equal 37, parsed['bar']['soon_threshold_minutes'],
+                   "the user's pre-existing soon_threshold_minutes must survive, not revert to the default"
+      refute parsed.key?('waybar')
+
+      # A second bar command afterward must still parse cleanly — no double
+      # [bar] section is ever created on a re-run.
+      out2, status2 = run_bar('status')
+      assert_equal 0, status2
+      assert_match(/\Apreset\s+minimal/, out2)
+      Tomlrb.load_file(OmarchyPrayer::Paths.config_file) # raises on a corrupt file
+    end
+  end
+
+  # Regression: `icon` is an empty format. The Quickshell widget collapses to
+  # its own mosque glyph, but waybar's module has no glyph of its own — with
+  # no `format` override it falls back to the default `{text}`, so an empty
+  # format renders nothing at all: no icon, no tooltip, module effectively
+  # gone from the bar. The setting is still honoured (the user asked for it);
+  # only a warning is added.
+  def test_bar_preset_icon_warns_when_the_detected_bar_is_waybar
+    with_isolated_home do |home|
+      seed
+      force_waybar_detection(home)
+
+      out, status = run_bar('preset', 'icon')
+      assert_equal 0, status
+      assert_match(/bar preset: icon/, out)
+      assert_match(/waybar module has no glyph/, out)
+      assert_match(/bar preset full/, out, 'the warning must say how to undo it')
+      assert_match(/format\s*=\s*""/, text)
+    end
+  end
+
+  # The same preset on a quickshell-detected machine must apply silently —
+  # the warning is specific to waybar's missing glyph.
+  def test_bar_preset_icon_is_silent_when_not_on_waybar
+    with_isolated_home do
+      seed
+      out, status = run_bar('preset', 'icon')
+      assert_equal 0, status
+      assert_equal "bar preset: icon\n", out
     end
   end
 end

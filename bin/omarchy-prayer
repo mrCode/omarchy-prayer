@@ -87,8 +87,16 @@ end
 def cmd_bar(argv)
   require 'omarchy_prayer/bar_preset'
   require 'omarchy_prayer/bar_setting'
+  require 'omarchy_prayer/bar_detect'
   require 'omarchy_prayer/prayer_names'
   require 'omarchy_prayer/config'
+
+  # Without this, a pre-0.2.0 config (still [waybar]) gets a NEW [bar]
+  # section appended alongside it; the later [waybar]->[bar] rename then
+  # collides with it, producing two [bar] tables that Tomlrb refuses to
+  # parse. cmd_tui and cmd_setup already migrate before touching config —
+  # bar needs the same guarantee since it can be the very first command run.
+  OmarchyPrayer::Migrations.run
 
   sub = (argv[0] || 'status').downcase
   arg = argv[1]
@@ -122,6 +130,15 @@ def bar_preset(name)
   unless presets.include?(name)
     warn "unknown preset #{name.inspect} (valid: #{presets.join(', ')})"
     exit 1
+  end
+  # The `icon` preset is an empty format — the Quickshell widget collapses to
+  # its own mosque glyph, but the waybar module has no glyph of its own, so
+  # waybar's default `{text}` renders nothing at all: no icon, no tooltip,
+  # module effectively gone. Still apply it (the user asked), just warn.
+  if name == 'icon' && OmarchyPrayer::BarDetect.detect == :waybar
+    warn 'omarchy-prayer: warning — the waybar module has no glyph, so the ' \
+         '`icon` preset will make it render empty (no icon, no tooltip). ' \
+         'Undo with `omarchy-prayer bar preset full`.'
   end
   OmarchyPrayer::BarSetting.set('format', OmarchyPrayer::BarPreset.format_for(name))
   puts "bar preset: #{name}"

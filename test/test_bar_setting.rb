@@ -150,4 +150,29 @@ class TestBarSetting < Minitest::Test
       assert_equal 60, parsed['bar']['quiet_until_minutes']
     end
   end
+
+  # Regression: replace_key's old lazy `(.*?)...\z` match swallowed a
+  # trailing inline comment into the "old value" it discarded, silently
+  # deleting the user's comment on every rewrite. The module's own docstring
+  # promises comments survive; the sibling AudioSetting never had this bug
+  # because its regex is anchored to `(true|false)` instead of a lazy `.*?`.
+  def test_rewrite_preserves_trailing_inline_comment
+    with_isolated_home do
+      FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+      config = <<~TOML
+        [location]
+        latitude = 24.7136
+
+        [bar]
+        format = "{city} · {prayer} {countdown}"  # my custom pill
+      TOML
+      File.write(OmarchyPrayer::Paths.config_file, config)
+
+      OmarchyPrayer::BarSetting.set('format', '{prayer} {countdown}')
+
+      assert_includes text, '# my custom pill', 'trailing comment must survive the rewrite'
+      parsed = Tomlrb.load_file(OmarchyPrayer::Paths.config_file)
+      assert_equal '{prayer} {countdown}', parsed['bar']['format']
+    end
+  end
 end
