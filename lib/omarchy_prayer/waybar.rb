@@ -22,7 +22,7 @@ module OmarchyPrayer
         .gsub('{city}',      status['city'].to_s)
         .gsub('{prayer}',    nx['pretty'])
         .gsub('{time}',      nx['time'])
-        .gsub('{countdown}', format_countdown(secs))
+        .gsub('{countdown}', format_countdown(secs, pill['compact_countdown'] == true))
 
       cls = secs / 60 < pill['soon_threshold_minutes'] ? 'prayer-soon' : 'prayer-normal'
       JSON.generate(text: text, class: cls, tooltip: build_tooltip(status))
@@ -43,11 +43,12 @@ module OmarchyPrayer
       render_from_status(status, now: now)
     end
 
-    def format_countdown(secs)
+    def format_countdown(secs, compact = false)
       secs = 0 if secs < 0
       h = secs / 3600
       m = (secs % 3600) / 60
-      h.positive? ? "#{h}h #{m}m" : "#{m}m"
+      return "#{m}m" unless h.positive?
+      compact ? format('%d:%02d', h, m) : "#{h}h #{m}m"
     end
 
     def build_tooltip(status)

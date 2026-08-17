@@ -72,4 +72,57 @@ class TestWaybar < Minitest::Test
     data = JSON.parse(json)
     assert_equal 'Asr 2h 14m', data['text']
   end
+
+  def status_with(pill)
+    {
+      'city'    => 'Riyadh',
+      'prayers' => [{ 'pretty' => 'Asr', 'time' => '15:18' }],
+      'next'    => { 'pretty' => 'Asr', 'time' => '15:18',
+                     'epoch' => Time.new(2026, 4, 22, 15, 18, 0, 10800).to_i },
+      'pill'    => { 'soon_threshold_minutes' => 10 }.merge(pill)
+    }
+  end
+
+  def test_compact_countdown_uses_colon_form
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)   # 2h 14m before Asr
+    json = OmarchyPrayer::Waybar.render_from_status(
+      status_with('format' => '{countdown}', 'compact_countdown' => true), now: now
+    )
+    assert_equal '2:14', JSON.parse(json)['text']
+  end
+
+  def test_compact_countdown_under_an_hour_stays_minutes
+    now = Time.new(2026, 4, 22, 14, 52, 0, 10800)  # 26m before Asr
+    json = OmarchyPrayer::Waybar.render_from_status(
+      status_with('format' => '{countdown}', 'compact_countdown' => true), now: now
+    )
+    assert_equal '26m', JSON.parse(json)['text']
+  end
+
+  def test_non_compact_countdown_unchanged
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)
+    json = OmarchyPrayer::Waybar.render_from_status(
+      status_with('format' => '{countdown}', 'compact_countdown' => false), now: now
+    )
+    assert_equal '2h 14m', JSON.parse(json)['text']
+  end
+
+  def test_icon_preset_renders_empty_text
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)
+    json = OmarchyPrayer::Waybar.render_from_status(
+      status_with('format' => ''), now: now
+    )
+    data = JSON.parse(json)
+    assert_equal '', data['text']
+    refute_empty data['tooltip'], 'times must stay reachable in the tooltip'
+  end
+
+  def test_quiet_until_minutes_ignored_by_waybar
+    now = Time.new(2026, 4, 22, 13, 4, 0, 10800)
+    json = OmarchyPrayer::Waybar.render_from_status(
+      status_with('format' => '{prayer} {countdown}', 'quiet_until_minutes' => 60), now: now
+    )
+    assert_equal 'Asr 2h 14m', JSON.parse(json)['text'],
+                 'waybar has no glyph to collapse to, so quiet must not apply'
+  end
 end
