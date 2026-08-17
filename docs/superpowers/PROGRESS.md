@@ -1,13 +1,14 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 / v0.2.1)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.2.2)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-08-17
 **Branch:** `master` (feature branch merged and released)
-**Status:** SHIPPED and fully verified on hardware. Latest **v0.2.1**.
-GitHub tags `v0.2.0` / `v0.2.1`; AUR `omarchy-prayer 0.2.1-1`; installed locally.
-Suite: **184 runs, 524 assertions, 0 failures** — green under both `bundle exec
+**Status:** SHIPPED and fully verified on hardware. Latest **v0.2.2**.
+GitHub tags `v0.2.0` / `v0.2.1` / `v0.2.2`; AUR `omarchy-prayer 0.2.2-1`;
+installed locally. Also listed for the community plugin marketplace.
+Suite: **189 runs, 538 assertions, 0 failures** — green under both `bundle exec
 rake test` and the bundler-less `check()` invocation.
 
 **Nothing is outstanding.** The work that opened this effort is complete; only
@@ -77,7 +78,14 @@ native Quickshell plugin and fixes the compat breakages.
 
 - `PluginRegistry.qml:11` hardcodes `pluginsDir: home + "/.config/omarchy/plugins"`.
   **Pacman cannot own the live plugin files** — setup must copy into `$HOME`.
-- Plugin IDs are not validated; ours is `prayer.times` (avoids the `omarchy.*` namespace).
+- **Plugin id is `io.github.mrcode.prayer-times`.** The shell does not validate
+  ids, but the marketplace treats them as permanent and globally unique, so the
+  original generic `prayer.times` was renamed in v0.2.2 with an automatic
+  migration. `ShellPlugin::LEGACY_PLUGIN_ID` still carries the old value — do
+  not delete it while anyone may still be on 0.2.0/0.2.1.
+- **The shell keys plugins on the manifest id, not the directory name.** If the
+  two disagree the widget silently does not render; `warn_on_id_mismatch` now
+  reports that case.
 - Omarchy ships **no generic command-output widget** — a bar widget must be QML.
 - `omarchy-shell shell ping` → `ok` is the liveness probe. **Do not** detect
   Quickshell via `shell.json` existing — that file is optional.
@@ -131,6 +139,9 @@ Confirmed by observation on the real machine, not just by tests:
   rolled over to tomorrow's Fajr and dropped out of amber — all unattended
 - Adhan on/off button toggles correctly; mosque and muted-speaker glyphs both
   render in the bar font
+- **Plugin id migration ran on the real install:** the bar entry was renamed in
+  place, the widget kept index 0 before the tray, the stale directory was
+  removed, and `shell.json` was backed up first
 
 ## Release notes (v0.2.0, 2026-08-16)
 
@@ -154,6 +165,41 @@ dead because 0.2.0 had no `audio` subcommand. Verify with
 `bash -lc "omarchy-prayer <cmd>"`, never `ruby -Ilib`. New JSON fields are now
 gated on presence so an older CLI hides the control instead of misreporting it.
 See [[feedback-verify-via-path]].
+
+## v0.2.2 (2026-08-17) — namespaced plugin id
+
+Renamed `prayer.times` → `io.github.mrcode.prayer-times` before the marketplace
+listing was approved, since ids there are permanent and a generic one could
+collide. `setup` migrates existing installs: it renames the id in place in
+`shell.json` (preserving the widget's bar position), removes the stale plugin
+directory, and backs `shell.json` up first. A user who had already removed the
+widget is left alone.
+
+**Ordering hazard, hit during the release:** `source_dir` prefers the *packaged*
+copy at `/usr/share/omarchy-prayer/shell-plugin`, so running `setup` from the
+repo while the installed package still had the old manifest copied an old
+`manifest.json` into the new directory name — the bar entry and manifest id
+disagreed and the widget vanished. For a real upgrade the order is correct
+(pacman installs the new manifest, then setup runs). `warn_on_id_mismatch`
+now surfaces it rather than failing silently.
+
+Also note: `omarchy-shell -q <target> <method>` returns success even when the
+target does not exist. Never use `-q` to *verify* anything — drop it when
+checking whether IPC actually works.
+
+## Marketplace listing
+
+- Directory: <https://omarchyplugins.com/> (community, HANCORE-linux/omarchy-plugin-marketplace)
+- Standalone plugin repo: <https://github.com/mrCode/omarchy-prayer-plugin>
+  — manifest/README/LICENSE plus `preview.png` at the **repo root**, as the
+  marketplace requires. This repo stays the source of truth; publish with
+  `script/sync-plugin-repo`, which copies, validates, and commits.
+- Submission: issue #456, category **Widgets**, tags **Bar** + **Quickshell**.
+  Awaiting maintainer review.
+- The plugin is *not* self-contained — it fronts the `omarchy-prayer` CLI. That
+  dependency is disclosed in the listing and the README, and a 5s watchdog
+  reports `omarchy-prayer is not installed` when the binary is missing
+  (Quickshell does **not** fire `onExited` in that case).
 
 ## Possible follow-ups (not scheduled)
 
