@@ -3,10 +3,10 @@
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
-**Last updated:** 2026-08-18
+**Last updated:** 2026-08-20
 **Branch:** merged to `master` (PR #6, merge commit)
-**Status:** **v0.3.0 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.0`; AUR
-`omarchy-prayer 0.3.0-1`; installed locally and verified through PATH; plugin
+**Status:** **v0.3.1 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.1`; AUR
+`omarchy-prayer 0.3.1-1`; installed locally and verified through PATH; plugin
 repo synced and pushed. Also listed for the community plugin marketplace.
 Suite: **253 runs, 796–797 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
@@ -36,9 +36,12 @@ flight. Two items are open, neither urgent:
    working Mute/Adhan buttons, so risk is low. If a click does nothing, check
    `journalctl --user | grep -i prayer` first and remember that `bar.run` is
    fire-and-forget — a failing command is silent.
-2. **Marketplace listing** — issue #456 on HANCORE-linux/omarchy-plugin-marketplace
-   is awaiting maintainer review. The listed repo (mrCode/omarchy-prayer-plugin)
-   now carries 0.3.0. Nothing to do but wait.
+2. **Marketplace listing** — issue #456 on HANCORE-linux/omarchy-plugin-marketplace.
+   Labels: `validated` (the submission metadata passed — this needed the issue
+   BODY to carry all six `SUBMISSION.md` headings; comments do not update
+   metadata), plus `security-review-required`, which a collaborator added after
+   reporting a real vulnerability. Nothing to do but wait for a human reviewer.
+   The listed repo (mrCode/omarchy-prayer-plugin) carries 0.3.1.
 
 Optional, only if the user asks: the "Possible follow-ups" section near the
 bottom, and the accepted-with-rulings list — do NOT treat those as bugs.
@@ -290,6 +293,26 @@ publication is out of scope, see task-10-report.md):**
   dependency is disclosed in the listing and the README, and a 5s watchdog
   reports `omarchy-prayer is not installed` when the binary is missing
   (Quickshell does **not** fire `onExited` in that case).
+
+## v0.3.1 (2026-08-20) — security fix, reported externally
+
+QML `Text` defaults to `Text.AutoText`, which renders markup-shaped input as
+RICH text; Qt rich text honours `<img src>` and loads local AND remote
+resources. `city`/`country` come from an ip-api.com response, are persisted by
+auto-relocate, and reach the pill and panel — so a hostile or intercepted reply
+could trigger an unattended fetch from inside the shell process. Reported by
+@ryanrhughes on marketplace issue #456.
+
+Fixed in two layers, because the pill's `Text` belongs to Omarchy's
+`WidgetButton` and cannot be configured from the plugin:
+`textFormat: Text.PlainText` on all nine panel `Text` elements, plus
+`OmarchyPrayer::Sanitize` stripping angle brackets at ingress (`Geolocate`) and
+egress (`Status`).
+
+**Lesson:** the whole-branch review asked about component interactions and
+backward compatibility but never "what if the DATA is hostile?" Untrusted-input
+review was not in the rubric. Any field originating from a network response —
+`city`, `country` — is attacker-influenced and must be treated as such.
 
 ## Known-and-accepted after the v0.3.0 whole-branch review
 
