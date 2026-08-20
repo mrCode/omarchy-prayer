@@ -71,6 +71,7 @@ Panel {
           spacing: Style.space(2)
 
           Text {
+            textFormat: Text.PlainText
             text: root.ready
               ? (root.prayerData.country ? root.prayerData.city + ", " + root.prayerData.country
                                    : root.prayerData.city)
@@ -82,6 +83,7 @@ Panel {
           }
 
           Text {
+            textFormat: Text.PlainText
             visible: root.ready
             text: root.ready
               ? [root.prayerData.date, root.prayerData.hijri].filter(function(v) { return !!v }).join(" · ")
@@ -94,6 +96,7 @@ Panel {
 
         // ---- Error state, when the producer could not be read.
         Text {
+          textFormat: Text.PlainText
           visible: !root.ready
           width: parent.width
           wrapMode: Text.WordWrap
@@ -142,6 +145,7 @@ Panel {
               }
 
               Text {
+                textFormat: Text.PlainText
                 anchors.left: dot.right
                 anchors.leftMargin: Style.space(10)
                 anchors.verticalCenter: parent.verticalCenter
@@ -154,6 +158,7 @@ Panel {
 
               Text {
                 id: timeLabel
+                textFormat: Text.PlainText
                 anchors.right: tagLabel.left
                 anchors.rightMargin: Style.space(10)
                 anchors.verticalCenter: parent.verticalCenter
@@ -165,6 +170,7 @@ Panel {
 
               Text {
                 id: tagLabel
+                textFormat: Text.PlainText
                 anchors.right: parent.right
                 anchors.rightMargin: Style.space(8)
                 anchors.verticalCenter: parent.verticalCenter
@@ -188,6 +194,7 @@ Panel {
           height: Style.space(16)
 
           Text {
+            textFormat: Text.PlainText
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             text: root.ready ? Model.qiblaLabel(root.prayerData.qibla) : ""
@@ -197,6 +204,7 @@ Panel {
           }
 
           Text {
+            textFormat: Text.PlainText
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             text: root.ready ? Model.sourceLabel(root.prayerData.method, root.prayerData.source) : ""
@@ -215,6 +223,7 @@ Panel {
           spacing: Style.space(5)
 
           Text {
+            textFormat: Text.PlainText
             text: "DESIGN"
             color: Color.muted
             font.family: Style.font.family

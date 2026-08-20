@@ -2,6 +2,7 @@ require 'net/http'
 require 'uri'
 require 'json'
 require 'omarchy_prayer/tz_location'
+require 'omarchy_prayer/sanitize'
 
 module OmarchyPrayer
   module Geolocate
@@ -66,8 +67,8 @@ module OmarchyPrayer
       {
         latitude:  data.fetch('lat'),
         longitude: data.fetch('lon'),
-        city:      data.fetch('city'),
-        country:   data.fetch('countryCode')
+        city:      Sanitize.display(data.fetch('city')),
+        country:   Sanitize.display(data.fetch('countryCode'))
       }
     end
   end

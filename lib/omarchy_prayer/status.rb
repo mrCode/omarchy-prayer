@@ -3,6 +3,7 @@ require 'omarchy_prayer/today'
 require 'omarchy_prayer/qibla'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/prayer_names'
+require 'omarchy_prayer/sanitize'
 
 module OmarchyPrayer
   # The single structured view of "what are today's prayer times, right now".
@@ -19,8 +20,11 @@ module OmarchyPrayer
       script  = config.names_script
 
       {
-        'city'    => config.city,
-        'country' => config.country,
+        # Sanitised on the way out as well as on the way in: an existing
+        # config may already hold a poisoned city from before the ingress
+        # guard existed. See Sanitize for why this matters.
+        'city'    => Sanitize.display(config.city),
+        'country' => Sanitize.display(config.country),
         'date'    => today.date,
         'hijri'   => today.hijri,
         'prayers' => Today::ORDER.map { |p| prayer_entry(today, p, now, script) },
