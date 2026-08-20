@@ -148,6 +148,27 @@ class TestStatus < Minitest::Test
     assert_equal 'fajr',   s['prayers'].first['name'], 'keys stay machine-readable'
   end
 
+  # Security: city/country come from an ip-api.com HTTP response and are
+  # rendered by QML Text, whose AutoText default would treat markup as RICH
+  # text and load <img src> targets. See OmarchyPrayer::Sanitize.
+  def test_city_and_country_are_stripped_of_markup
+    hostile = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224,
+                      'city' => '<img src="http://attacker.invalid/x">Riyadh',
+                      'country' => '<b>SA</b>' }
+    )
+    s = OmarchyPrayer::Status.build(today: today, config: hostile, now: afternoon)
+    refute_includes s['city'], '<'
+    refute_includes s['city'], '>'
+    refute_includes s['country'], '<'
+    assert_includes s['city'], 'Riyadh', 'the legitimate part of the name survives'
+  end
+
+  def test_ordinary_city_names_are_untouched
+    assert_equal 'Riyadh', build['city']
+    assert_equal 'SA', build['country']
+  end
+
   def test_names_default_to_latin
     s = build
     assert_equal 'Maghrib', s['next']['pretty']
