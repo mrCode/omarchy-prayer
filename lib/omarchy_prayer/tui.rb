@@ -9,6 +9,7 @@ require 'omarchy_prayer/qibla'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/relocate'
 require 'omarchy_prayer/geolocate'
+require 'omarchy_prayer/sanitize'
 
 module OmarchyPrayer
   class TUI
@@ -70,13 +71,16 @@ module OmarchyPrayer
 
     def render_header
       center bold + fg(:accent) + 'OMARCHY  PRAYER' + rst
-      center fg(:muted) + "#{@cfg.city}, #{@cfg.country}" + rst
+      # Sanitised at the sink: city/country come from a geolocation HTTP
+      # response and are printed into a RAW-mode terminal, where a decoded
+      # escape sequence (e.g. OSC 52 clipboard write) would execute.
+      center fg(:muted) + "#{safe(@cfg.city)}, #{safe(@cfg.country)}" + rst
       center fg(:muted) + format_date_line + rst
     end
 
     def format_date_line
       gregorian = format_gregorian(@today.date)
-      @today.hijri ? "#{gregorian}     #{dot}     #{@today.hijri}" : gregorian
+      @today.hijri ? "#{gregorian}     #{dot}     #{safe(@today.hijri)}" : gregorian
     end
 
     def format_gregorian(iso_date)
@@ -176,6 +180,11 @@ module OmarchyPrayer
       n.times { @out.print "\r\n" }
     end
 
+    # Everything that reaches the terminal goes through this.
+    def safe(value)
+      Sanitize.display(value.to_s)
+    end
+
     def visible_len(s)
       s.gsub(/\e\[[0-9;]*m/, '').length
     end
@@ -188,7 +197,7 @@ module OmarchyPrayer
       Relocate.run([], io: captured)
       refresh_schedule
       @cfg = Config.load
-      show_toast("→ #{@cfg.city}, #{@cfg.country}", color: :primary, dwell: 1.0)
+      show_toast("→ #{safe(@cfg.city)}, #{safe(@cfg.country)}", color: :primary, dwell: 1.0)
     rescue Geolocate::Error, SocketError,
            Errno::ECONNREFUSED, Errno::ENETUNREACH, Errno::EHOSTUNREACH,
            Timeout::Error, SystemExit => e

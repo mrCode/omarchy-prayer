@@ -31,6 +31,8 @@ module OmarchyPrayer
       value
     end
 
+    CONTROL_CHARS = /[\p{Cc}\p{Cf}]/.freeze
+
     def literal(value)
       case value
       when true, false, Integer then value.to_s
@@ -40,8 +42,13 @@ module OmarchyPrayer
 
     # Escape backslashes first, then quotes — otherwise a quote's escaping
     # backslash would itself get re-escaped by the next pass.
+    #
+    # Control characters are dropped rather than escaped. TOML forbids them raw
+    # inside a basic string, so a geolocation response carrying a newline in
+    # `city` would otherwise write a config that no entry point can parse. No
+    # legitimate value here contains one.
     def escape(str)
-      str.gsub('\\') { '\\\\' }.gsub('"') { '\\"' }
+      str.gsub(CONTROL_CHARS, '').gsub('\\') { '\\\\' }.gsub('"') { '\\"' }
     end
 
     def unescape(str)

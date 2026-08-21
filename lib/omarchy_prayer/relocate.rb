@@ -2,6 +2,7 @@ require 'optparse'
 require 'fileutils'
 require 'omarchy_prayer/geolocate'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/bar_setting'
 
 module OmarchyPrayer
   module Relocate
@@ -64,10 +65,20 @@ module OmarchyPrayer
       text.sub(pattern, "\\1#{value}")
     end
 
+    # `value` is geolocation-derived, so it must be escaped before it is
+    # spliced into a TOML string: an unescaped `"` closes the literal early and
+    # everything after it is parsed as TOML source, which lets a hostile
+    # response open a new table and orphan the keys below it (silently
+    # re-enabling auto_update on a user who pinned their location) or corrupt
+    # the file so every entry point fails to load it.
+    #
+    # The BLOCK form of sub is deliberate: the string form expands \0, \&,
+    # backtick and \' inside the replacement as backreferences, so a value
+    # containing them would splice in unrelated matched text.
     def sub_string(text, key, value)
       pattern = /^(\s*#{Regexp.escape(key)}\s*=\s*)"[^"]*"/
       raise "no `#{key} = \"...\"` line in config.toml" unless text =~ pattern
-      text.sub(pattern, %(\\1"#{value}"))
+      text.sub(pattern) { "#{Regexp.last_match(1)}#{BarSetting.literal(value.to_s)}" }
     end
 
     def clear_month_caches

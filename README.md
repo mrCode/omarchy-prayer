@@ -187,9 +187,9 @@ Existing configs are renamed automatically on the next run, and an unmigrated
 
 ### Updating location
 
-Location auto-updates on every schedule rebuild — daily at 00:01, on session start, on resume from suspend, on `omarchy-prayer refresh`, and (if the NetworkManager dispatcher was installed) on every network connection-up. Each rebuild re-detects via ip-api.com and rewrites `[location]` in `config.toml` if the **country** changed or detected **coordinates drift more than 50 km** from the configured ones.
+Location auto-updates on every schedule rebuild — daily at 00:01, on session start, on resume from suspend, on `omarchy-prayer refresh`, and (if the NetworkManager dispatcher was installed) on every network connection-up. Each rebuild re-detects via ipwho.is (HTTPS) and rewrites `[location]` in `config.toml` if the **country** changed or detected **coordinates drift more than 50 km** from the configured ones.
 
-The 50 km threshold is large enough to absorb ip-api.com's regional-hub jitter (e.g. an IP in Makkah commonly resolves to Jeddah — same metro, no rewrite) while still catching real travel between cities.
+The 50 km threshold is large enough to absorb the provider's regional-hub jitter (e.g. an IP in Makkah commonly resolves to Jeddah — same metro, no rewrite) while still catching real travel between cities.
 
 To disable auto-update — for example, if you want the schedule pinned to a city you don't currently live in — set `auto_update = false` in the `[location]` block of `config.toml`. Manual override is still available:
 
