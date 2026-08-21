@@ -4,6 +4,16 @@
 // here stays trivially checkable. Every prayer-time calculation lives in Ruby
 // (`omarchy-prayer status --json`); this file only formats what it is handed.
 
+// Strip markup-significant characters. The pill's own label enforces
+// Text.PlainText, but this is the second line of the same defence: it keeps a
+// markup-shaped string from ever being ASSEMBLED here, so the guarantee holds
+// even if a future binding routes this text somewhere that does not enforce
+// plain text. Angle brackets never legitimately appear in these values.
+function plain(value) {
+  return String(value === undefined || value === null ? "" : value)
+    .replace(/[<>]/g, "")
+}
+
 // Seconds -> "1h 57m" / "8m", or compact "1:57" / "8m". Never negative.
 function formatCountdown(secs, compact) {
   if (!isFinite(secs) || secs < 0) secs = 0
@@ -31,11 +41,11 @@ function shouldCollapse(secs, quietMinutes) {
 // countdown's direction without adding a visible character or touching the
 // format string itself (which would break the Latin case).
 function renderPill(format, city, prayer, time, countdown) {
-  return String(format === undefined || format === null ? "" : format)
+  return plain(String(format === undefined || format === null ? "" : format)
     .replace(/\{city\}/g, city || "")
     .replace(/\{prayer\}/g, prayer || "")
     .replace(/\{time\}/g, time || "")
-    .replace(/\{countdown\}/g, countdown ? "‎" + countdown : "")
+    .replace(/\{countdown\}/g, countdown ? "‎" + countdown : ""))
 }
 
 function secondsUntil(epochSeconds, nowMs) {

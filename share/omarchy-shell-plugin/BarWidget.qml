@@ -246,17 +246,32 @@ BarWidget {
     onTriggered: root.refresh()
   }
 
+  // What the pill displays. Built here so it can be measured and rendered by
+  // OUR label below rather than by WidgetButton's.
+  readonly property string buttonText: {
+    // The second glyph is U+F026 (muted speaker). Keep the escape rather
+    // than retyping the character \u2014 it is invisible in most editors.
+    var lead = root.glyph + (root.audioStateKnown && !root.audioEnabled ? " \uf026" : "")
+    if (root.vertical || root.collapsed) return lead
+    return lead + "  " + root.pillText
+  }
+
   WidgetButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: {
-      // The second glyph is U+F026 (muted speaker). Keep the escape rather
-      // than retyping the character \u2014 it is invisible in most editors.
-      var lead = root.glyph + (root.audioStateKnown && !root.audioEnabled ? " \uf026" : "")
-      if (root.vertical || root.collapsed) return lead
-      return lead + "  " + root.pillText
-    }
+
+    // WidgetButton's own label is a private Text with Qt's AutoText default,
+    // which renders markup-shaped input as RICH text and will load <img src>
+    // targets. Its textFormat cannot be set from outside the component, and
+    // this pill shows configuration- and geolocation-derived values. So we
+    // suppress that label and paint our own with plain text enforced here, in
+    // this snapshot, instead of relying on every upstream producer to
+    // sanitise. Reported by @ryanrhughes; see also Model.plain().
+    labelVisible: false
+    text: root.buttonText          // kept for tooltip/measurement semantics
+    fixedWidth: root.vertical ? -1 : Math.max(12, pillLabel.implicitWidth + Style.spaceReal(8.75) * 2)
+
     fontSize: Style.font.body
     horizontalMargin: 8.75
     verticalPadding: 8.75
@@ -270,6 +285,19 @@ BarWidget {
       if (b === Qt.RightButton) root.stopAdhan()
       else if (b === Qt.MiddleButton) root.openTui()
       else root.togglePanel()
+    }
+
+    Text {
+      id: pillLabel
+      anchors.centerIn: parent
+      textFormat: Text.PlainText
+      text: root.buttonText
+      color: button.active && button.useActiveColor ? button.activeColor : button.foreground
+      font.family: button.fontFamily
+      font.pixelSize: button.fontSize
+      renderType: Text.NativeRendering
+      horizontalAlignment: Text.AlignHCenter
+      verticalAlignment: Text.AlignVCenter
     }
   }
 }

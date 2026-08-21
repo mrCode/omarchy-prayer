@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.mrcode.prayer-times",
   "name": "Prayer times",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": "omarchy-prayer",
   "description": "Next prayer countdown with a times panel",
   "kinds": ["bar-widget"],
