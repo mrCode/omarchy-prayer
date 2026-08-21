@@ -50,15 +50,12 @@ flight. Three items are open, none urgent:
    v0.3.3 findings, and offers to hold the listing pending review. Nothing to do
    but wait for a reply.
 
-Machine state: Location Riyadh, SA. Bar shows the **`minimal`** preset (the
-user kept it after the chip test), Latin names.
-
-**`[audio].enabled` was `true` as of 18:09 on 2026-08-21** — almost certainly the
-panel's Adhan toggle caught alongside the design chips. The user was told; the
-setting was NOT changed on their behalf. Check it at the start of the next
-session and confirm against [[project-adhan-muted-default]], which governs the
-SHIPPED default (`false`) — it does not forbid the user from enabling it
-deliberately on their own machine.
+Machine state: Location Riyadh, SA. Bar back on the **`full`** preset, Latin
+names — the user cycled through the chips during the verification and returned
+to `full`. `[audio].enabled = false`, notifications on: the panel's Adhan toggle
+got caught alongside the design chips, the user was told rather than having it
+changed for them, and they asked for it off at 18:2x on 2026-08-21. This is the
+standing state per [[project-adhan-muted-default]].
 
 **Plugin state (all three copies agree at 0.3.3):** the marketplace-listed repo
 `mrCode/omarchy-prayer-plugin` (HEAD `2ba0549`, pushed), `share/omarchy-shell-plugin/`
