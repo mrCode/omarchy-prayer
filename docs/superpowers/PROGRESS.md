@@ -12,11 +12,10 @@ Suite: **278 runs, 884–885 assertions, 0 failures, 1 skip** — green under bo
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
 (assertion count differs by one run to run; not a failure — see task-10 report).
 
-**Outstanding:** one verification only — literal mouse-click delivery on the
-design-picker chips has never been exercised (no input-injection tooling was
-available during the build). The chips use the same `Ui/Button` component as the
-working Mute/Adhan buttons in the same panel, so risk is low; a single human
-click settles it.
+**Outstanding:** nothing on the code. The design-picker chips were the last
+unverified path and a real human click closed that on 2026-08-21 (see START
+HERE). The only open item is external: the marketplace listing awaits a
+maintainer.
 
 **Current machine state:** `[audio].enabled = false` (user turned the adhan off
 after testing) — notifications fire, audio does not. This is also the shipped
@@ -29,13 +28,16 @@ default; see [[project-adhan-muted-default]].
 Everything is shipped and every repo is clean and pushed. There is no work in
 flight. Three items are open, none urgent:
 
-1. **Click the design-picker chips.** Open the panel (left-click the pill) and
-   click Full / Minimal / Icon. This is the ONLY thing never verified — no
-   input-injection tooling existed during the build, so the full data path was
-   exercised via the CLI instead. The chips use the same `Ui/Button` as the
-   working Mute/Adhan buttons, so risk is low. If a click does nothing, check
-   `journalctl --user | grep -i prayer` first and remember that `bar.run` is
-   fire-and-forget — a failing command is silent.
+1. ~~Click the design-picker chips.~~ **CLOSED 2026-08-21 — verified by a real
+   human click.** The user clicked Minimal in the panel while an `inotifywait`
+   watcher sat on `config.toml`; it caught `full` -> `minimal` within a second,
+   and three consecutive `status --json` reads then agreed with disk. The whole
+   path is exercised for real: click -> `setPreset()` -> `bar.run` -> CLI
+   rewrite -> widget re-read. The silent-`bar.run`-failure mode this item
+   existed to rule out is ruled out. Method worth reusing for any future
+   QML-click verification: watch the FILE, not the pill — the chip could update
+   its own selected state without the CLI call landing, so only the config write
+   is honest evidence.
 2. **Marketplace listing** — issue #456 on HANCORE-linux/omarchy-plugin-marketplace.
    Labels: `validated` (the submission metadata passed — this needed the issue
    BODY to carry all six `SUBMISSION.md` headings; comments do not update
@@ -48,8 +50,15 @@ flight. Three items are open, none urgent:
    v0.3.3 findings, and offers to hold the listing pending review. Nothing to do
    but wait for a reply.
 
-Machine state: `[audio].enabled = false` (adhan silent, notifications fire).
-Location Riyadh, SA. Bar shows the `full` preset, Latin names.
+Machine state: Location Riyadh, SA. Bar shows the **`minimal`** preset (the
+user kept it after the chip test), Latin names.
+
+**`[audio].enabled` was `true` as of 18:09 on 2026-08-21** — almost certainly the
+panel's Adhan toggle caught alongside the design chips. The user was told; the
+setting was NOT changed on their behalf. Check it at the start of the next
+session and confirm against [[project-adhan-muted-default]], which governs the
+SHIPPED default (`false`) — it does not forbid the user from enabling it
+deliberately on their own machine.
 
 **Plugin state (all three copies agree at 0.3.3):** the marketplace-listed repo
 `mrCode/omarchy-prayer-plugin` (HEAD `2ba0549`, pushed), `share/omarchy-shell-plugin/`
