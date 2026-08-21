@@ -1,14 +1,14 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.3.1)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.3.3)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
-**Last updated:** 2026-08-20
-**Branch:** merged to `master` (PR #6, merge commit)
-**Status:** **v0.3.1 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.1`; AUR
-`omarchy-prayer 0.3.1-1`; installed locally and verified through PATH; plugin
+**Last updated:** 2026-08-21
+**Branch:** merged to `master` (`fix/geolocation-trust-hardening`, `--no-ff`)
+**Status:** **v0.3.3 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.3`; AUR
+`omarchy-prayer 0.3.3-1`; installed locally and verified through PATH; plugin
 repo synced and pushed. Also listed for the community plugin marketplace.
-Suite: **259 runs, 821–822 assertions, 0 failures, 1 skip** — green under both
+Suite: **278 runs, 884–885 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
 (assertion count differs by one run to run; not a failure — see task-10 report).
 
@@ -27,7 +27,7 @@ default; see [[project-adhan-muted-default]].
 ## START HERE next session
 
 Everything is shipped and every repo is clean and pushed. There is no work in
-flight. Two items are open, neither urgent:
+flight. Three items are open, none urgent:
 
 1. **Click the design-picker chips.** Open the panel (left-click the pill) and
    click Full / Minimal / Icon. This is the ONLY thing never verified — no
@@ -40,14 +40,78 @@ flight. Two items are open, neither urgent:
    Labels: `validated` (the submission metadata passed — this needed the issue
    BODY to carry all six `SUBMISSION.md` headings; comments do not update
    metadata), plus `security-review-required`, which a collaborator added after
-   reporting a real vulnerability. Nothing to do but wait for a human reviewer.
-   The listed repo (mrCode/omarchy-prayer-plugin) carries 0.3.1.
-
-Optional, only if the user asks: the "Possible follow-ups" section near the
-bottom, and the accepted-with-rulings list — do NOT treat those as bugs.
+   reporting a real vulnerability. The listed repo (mrCode/omarchy-prayer-plugin)
+   now carries 0.3.3.
+3. **Nobody has told @ryanrhughes / issue #456 about the 0.3.2 and 0.3.3
+   fixes.** A comment was drafted but NOT posted — posting is the user's call.
 
 Machine state: `[audio].enabled = false` (adhan silent, notifications fire).
-Bar shows the `full` preset, Latin names.
+Location Riyadh, SA. Bar shows the `full` preset, Latin names.
+
+---
+
+## v0.3.3 — geolocation trust boundary (2026-08-21)
+
+A full-codebase security scan (user-requested) returned three findings, all
+confirmed by parallel false-positive filters. One root cause: the geolocation
+HTTP response is a **trust root** — persisted to `config.toml`, replayed on
+every run, printed to terminals and painted on the bar — but was handled as if
+it were our own data.
+
+1. **HIGH — cleartext transport.** `DEFAULT_URL` was `http://ip-api.com/json/`
+   and auto-relocate fires on every NetworkManager connection-up. The existing
+   timezone cross-check does NOT close this: it only catches *cross-country*
+   spoofing and is skipped entirely when `TzLocation.detect` returns nil, so a
+   co-located hostile-WiFi attacker was unaffected by it. Now `https://ipwho.is/`
+   (ip-api's free tier is HTTP-only) plus `require_secure_transport!`, which
+   refuses any non-HTTPS endpoint except loopback. Payload fields are validated:
+   coordinates numeric and in range, country code two letters.
+
+2. **HIGH — terminal control-character injection.** The attacker never sends a
+   raw ESC byte (that would break TOML); they send the literal six characters
+   `backslash-u-0-0-1-b`, which carry no markup and are a valid TOML basic
+   string. **Tomlrb 2.0.4 decodes them back into a real ESC on load** —
+   empirically confirmed. The payload is OSC 52, which writes the clipboard, and
+   Omarchy's shipped Alacritty config sets `osc52 = "CopyPaste"`, so the user's
+   next paste into a shell runs attacker-chosen text. `Sanitize.display` now
+   strips C0/C1 controls and Unicode format characters (covering bidi overrides
+   too) and caps length at 64.
+
+3. **LOW/MEDIUM — TOML injection.** `city`/`country` were spliced in unescaped;
+   a quote closed the literal early and the rest parsed as TOML — enough to flip
+   `auto_update` back on for a user who pinned their location. Escalation to code
+   execution via `[audio].player` is **not** reachable: tomlrb rejects duplicate
+   table headers. `first_run` and `relocate` now write through
+   `BarSetting.literal`, whose `escape` also drops control characters (TOML
+   forbids them raw in a basic string; a newline in `city` would otherwise write
+   a config nothing can parse).
+
+**Sanitisation is applied at every sink, not at ingress alone** — the poisoned
+values may already be on disk in existing installs, so ingress filtering cannot
+protect someone hit before this release. Sinks covered: `Status.build`,
+`TUI#render_header`, `TUI#relocate_here`, `bin/omarchy-prayer status`,
+`Notifier#compose`, `AutoRelocate#maybe_update`, and the QML pill/panel (0.3.2).
+
+**A second commit fixed three sinks the scan's own scope missed** — the
+notification body, `Status`'s `hijri` (an Aladhan API string, same trust class
+as city), and the auto-relocate stderr line. Found by the whole-branch pass, not
+by the scan. Same failure mode as v0.3.1: sanitising the *data a report names*
+rather than the *class of sink* it belongs to. See
+[[feedback-whole-branch-review]].
+
+Regression tests: `test/test_injection_hardening.rb` (10 tests). It first
+asserts the decoded ESC really reaches the config — if tomlrb ever stops
+decoding, that guard fails loudly rather than letting the sink tests silently
+pass on inert input.
+
+**Incident during this work:** an ad-hoc `ruby -e` verification script set
+`ENV["HOME"]` too late and ran `FirstRun.ensure_config!` against the REAL
+config, overwriting it with the injection fixture (location → Paris, adhan
+paths → template defaults). Restored from
+`config.toml.bak.pre-audio-enable`; the corrupted file was kept as
+`config.toml.corrupted-by-test.<epoch>`. **Never run destructive verification
+through `ruby -e` against a live HOME — write it as a test using
+`with_isolated_home`.** See [[feedback-no-adhoc-scripts-against-live-home]].
 
 ---
 
