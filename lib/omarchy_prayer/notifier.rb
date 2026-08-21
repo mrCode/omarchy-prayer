@@ -1,5 +1,6 @@
 require 'omarchy_prayer/audio'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/sanitize'
 
 module OmarchyPrayer
   class Notifier
@@ -60,7 +61,10 @@ module OmarchyPrayer
       pretty = PRETTY.fetch(prayer)
       at = @today.times.fetch(prayer)
       if event == 'pre'
-        ["#{@pre_minutes} min to #{pretty}", "#{pretty} at #{at} — #{@today.city}", false]
+        # The body is rendered by Omarchy's in-shell notification daemon
+        # (a QML surface) and by notify-send on waybar systems. city is
+        # geolocation-derived, so it is sanitised here too.
+        ["#{@pre_minutes} min to #{pretty}", "#{pretty} at #{at} — #{Sanitize.display(@today.city.to_s)}", false]
       else
         [pretty, "#{at} — time for #{pretty}", true]
       end

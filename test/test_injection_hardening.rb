@@ -9,6 +9,8 @@ require 'omarchy_prayer/geolocate'
 require 'omarchy_prayer/today'
 require 'omarchy_prayer/config'
 require 'omarchy_prayer/paths'
+require 'omarchy_prayer/notifier'
+require 'omarchy_prayer/status'
 
 # Regression tests for the three findings of the v0.3.3 security scan.
 #
@@ -155,6 +157,36 @@ class TestInjectionHardening < Minitest::Test
       assert_equal false, parsed['audio']['enabled'], 'adhan stays muted by default'
       assert_nil parsed['location']['dummy']
       assert_includes parsed['location']['city'], 'enabled = true'
+    end
+  end
+
+  # ---- Sinks beyond the terminal ---------------------------------------
+
+  def test_notification_body_carries_no_control_characters
+    hostile = "Riyadh#{ESC}]52;c;cGF5bG9hZA==#{BEL}"
+    today = OmarchyPrayer::Today.new(
+      date: '2026-04-22', tz_offset: 10800, city: hostile, country: 'SA',
+      method: 'Makkah', source: 'api', times: TIMES
+    )
+    notifier = OmarchyPrayer::Notifier.new(
+      today: today, respect_silencing: false, audio_enabled: false,
+      audio_player: 'mpv', volume: 80, adhan: nil, adhan_fajr: nil,
+      pre_notify_minutes: 10
+    )
+    _title, body, = notifier.send(:compose, :dhuhr, 'pre')
+    refute_includes body, ESC, 'escape reached the notification daemon'
+    refute_includes body, BEL
+    assert_includes body, 'Riyadh'
+  end
+
+  def test_status_json_sanitises_hijri
+    seed(city: 'Riyadh', hijri: "15 Dhu#{ESC}]52;c;eA==#{BEL} 1447") do
+      json = OmarchyPrayer::Status.build(
+        today: OmarchyPrayer::Today.read, config: OmarchyPrayer::Config.load
+      )
+      refute_includes json['hijri'], ESC
+      refute_includes json['hijri'], BEL
+      assert_includes json['hijri'], '1447'
     end
   end
 end

@@ -1,5 +1,6 @@
 require 'omarchy_prayer/geolocate'
 require 'omarchy_prayer/relocate'
+require 'omarchy_prayer/sanitize'
 
 module OmarchyPrayer
   module AutoRelocate
@@ -13,13 +14,16 @@ module OmarchyPrayer
       detected = geolocate.detect
       return nil unless update_needed?(cfg, detected, threshold_km)
 
-      previous = format('%s, %s', cfg.city, cfg.country)
+      # Printed to stderr, which on a schedule run is the user's terminal.
+      previous = format('%s, %s', Sanitize.display(cfg.city.to_s),
+                        Sanitize.display(cfg.country.to_s))
       delta_km = haversine_km(cfg.latitude, cfg.longitude,
                               detected[:latitude], detected[:longitude])
       Relocate.update_config!(detected)
       Relocate.clear_month_caches
       io.puts format('omarchy-prayer: auto-relocated %s → %s, %s (Δ %d km)',
-                     previous, detected[:city], detected[:country], delta_km.round)
+                     previous, Sanitize.display(detected[:city].to_s),
+                     Sanitize.display(detected[:country].to_s), delta_km.round)
       detected
     rescue Geolocate::Error, SocketError, Errno::ECONNREFUSED, Errno::ENETUNREACH,
            Errno::EHOSTUNREACH, Timeout::Error => e

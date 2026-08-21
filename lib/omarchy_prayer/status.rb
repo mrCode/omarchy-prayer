@@ -26,7 +26,8 @@ module OmarchyPrayer
         'city'    => Sanitize.display(config.city),
         'country' => Sanitize.display(config.country),
         'date'    => today.date,
-        'hijri'   => today.hijri,
+        # Aladhan's response, not ours — same trust class as city.
+        'hijri'   => Sanitize.display(today.hijri),
         'prayers' => Today::ORDER.map { |p| prayer_entry(today, p, now, script) },
         'next'    => {
           'name'   => next_name.to_s,
