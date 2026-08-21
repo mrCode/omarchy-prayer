@@ -42,8 +42,11 @@ flight. Three items are open, none urgent:
    metadata), plus `security-review-required`, which a collaborator added after
    reporting a real vulnerability. The listed repo (mrCode/omarchy-prayer-plugin)
    now carries 0.3.3.
-3. **Nobody has told @ryanrhughes / issue #456 about the 0.3.2 and 0.3.3
-   fixes.** A comment was drafted but NOT posted — posting is the user's call.
+3. **@ryanrhughes / issue #456 have been told** about the 0.3.2 and 0.3.3
+   fixes (comment 5369851004, posted 2026-08-21 with the user's approval). It
+   states plainly that the v0.3.1 "fixed" report was wrong, walks all three
+   v0.3.3 findings, and offers to hold the listing pending review. Nothing to do
+   but wait for a reply.
 
 Machine state: `[audio].enabled = false` (adhan silent, notifications fire).
 Location Riyadh, SA. Bar shows the `full` preset, Latin names.
