@@ -22,6 +22,50 @@ class TestGeolocate < Minitest::Test
     thr&.join
   end
 
+  def test_refuses_cleartext_non_loopback_endpoint
+    err = assert_raises(OmarchyPrayer::Geolocate::Error) do
+      OmarchyPrayer::Geolocate.detect_ip(url: 'http://ip-api.com/json/', timeout: 2)
+    end
+    assert_match(/non-HTTPS/, err.message)
+  end
+
+  def test_accepts_ipwho_is_shape
+    body = { success: true, latitude: 24.7136, longitude: 46.6753,
+             city: 'Riyadh', country_code: 'sa' }
+    assert_equal 'Riyadh', OmarchyPrayer::Geolocate.parse_payload(JSON.parse(body.to_json))[:city]
+    assert_equal 'SA', OmarchyPrayer::Geolocate.parse_payload(JSON.parse(body.to_json))[:country]
+  end
+
+  def test_rejects_non_numeric_coordinates
+    body = { success: true, latitude: 'evil', longitude: 46.6, city: 'X', country_code: 'SA' }
+    assert_raises(OmarchyPrayer::Geolocate::Error) do
+      OmarchyPrayer::Geolocate.parse_payload(JSON.parse(body.to_json))
+    end
+  end
+
+  def test_rejects_out_of_range_coordinates
+    body = { success: true, latitude: 999.0, longitude: 46.6, city: 'X', country_code: 'SA' }
+    assert_raises(OmarchyPrayer::Geolocate::Error) do
+      OmarchyPrayer::Geolocate.parse_payload(JSON.parse(body.to_json))
+    end
+  end
+
+  def test_rejects_malformed_country_code
+    body = { success: true, latitude: 24.7, longitude: 46.6, city: 'X', country_code: 'NOT-A-CODE' }
+    assert_raises(OmarchyPrayer::Geolocate::Error) do
+      OmarchyPrayer::Geolocate.parse_payload(JSON.parse(body.to_json))
+    end
+  end
+
+  # The city field is the terminal-escape vector; confirm it is cleaned here.
+  def test_strips_control_characters_from_city
+    body = { success: true, latitude: 24.7, longitude: 46.6,
+             city: "Paris\u001b]52;c;eA==\u0007", country_code: 'FR' }
+    city = OmarchyPrayer::Geolocate.parse_payload(JSON.parse(body.to_json))[:city]
+    refute_includes city, "\u001b"
+    assert_includes city, 'Paris'
+  end
+
   def test_raises_when_status_not_success
     server = WEBrick::HTTPServer.new(Port: 0, BindAddress: '127.0.0.1',
                                      Logger: WEBrick::Log.new(File::NULL), AccessLog: [])

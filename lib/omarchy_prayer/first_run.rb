@@ -2,6 +2,7 @@ require 'fileutils'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/geolocate'
 require 'omarchy_prayer/setup'
+require 'omarchy_prayer/bar_setting'
 
 module OmarchyPrayer
   module FirstRun
@@ -10,8 +11,8 @@ module OmarchyPrayer
       # Edit freely; filled from IP geolocation on first run.
       latitude    = %<lat>.4f
       longitude   = %<lon>.4f
-      city        = "%<city>s"
-      country     = "%<country>s"
+      city        = %<city>s
+      country     = %<country>s
       # Re-detect on every schedule run (daily, on resume, on network up).
       # Set to false to pin location and only update via `omarchy-prayer relocate`.
       auto_update = true
@@ -56,7 +57,11 @@ module OmarchyPrayer
       File.write(Paths.config_file,
                  format(TEMPLATE,
                         lat: loc[:latitude], lon: loc[:longitude],
-                        city: loc[:city], country: loc[:country]))
+                        # Escaped, not raw: these come from a geolocation
+                        # HTTP response and an unescaped quote would let the
+                        # response inject TOML into the fresh config.
+                        city: BarSetting.literal(loc[:city].to_s),
+                        country: BarSetting.literal(loc[:country].to_s)))
       out.puts "omarchy-prayer: wrote config for #{loc[:city]}, #{loc[:country]} (edit #{Paths.config_file} to override)"
       Setup.run(io: out)
       true

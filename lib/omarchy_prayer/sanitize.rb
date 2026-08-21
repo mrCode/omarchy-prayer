@@ -1,31 +1,45 @@
 module OmarchyPrayer
-  # Strips markup-significant characters from strings that reach a display
-  # surface.
+  # Cleans strings that originate outside our control before they reach any
+  # display surface - a terminal, a QML Text, or a notification body.
   #
-  # This exists because QML's `Text` defaults to `Text.AutoText`, which sniffs
-  # its input and renders anything that looks like markup as RICH text. Qt rich
-  # text honours `<img src="...">`, which loads local files and REMOTE URLs from
-  # inside the shell process. Our `city` and `country` come from an ip-api.com
-  # HTTP response, so without this a hostile or intercepted reply could put
-  # `<img src="http://attacker/">` on the user's bar and have it fetched
-  # unattended on the next auto-relocate.
+  # `city` and `country` come from a geolocation HTTP response and are
+  # persisted into config.toml, so they are attacker-influenced data replayed
+  # on every run. Two distinct hazards, both handled here:
   #
-  # The widget also sets `textFormat: Text.PlainText` on every Text it owns.
-  # This is the second layer, and the only protection for the bar pill, whose
-  # Text belongs to Omarchy's WidgetButton and cannot be configured from here.
+  #   1. MARKUP. QML's `Text` defaults to `Text.AutoText`, which renders
+  #      markup-shaped input as RICH text; Qt rich text honours <img src=...>
+  #      and loads local and remote resources.
   #
-  # Angle brackets never legitimately appear in a place name or country code,
-  # so removing them outright is safe and needs no escaping rules.
+  #   2. TERMINAL CONTROL CHARACTERS. The TUI and `omarchy-prayer status`
+  #      print these values straight to the terminal. An attacker never needs
+  #      to send a raw ESC byte - that would break TOML parsing. They send the
+  #      literal six characters backslash-u-0-0-1-b, which contain no markup,
+  #      survive naive filtering, and are written into config.toml as a valid
+  #      basic string. Tomlrb then DECODES them back into a real ESC on load.
+  #      The classic payload is OSC 52, which writes the user's clipboard, so
+  #      their next paste into a shell runs attacker-chosen text.
+  #
+  # Stripping is safe because none of these characters legitimately appear in
+  # a place name or country code. The length cap bounds a hostile value that
+  # would otherwise wrap the bar or the TUI.
   module Sanitize
     MARKUP_CHARS = /[<>]/.freeze
 
+    # C0/C1 controls (ESC, BEL, CR, ...) plus Unicode format characters, which
+    # include the bidi overrides used to disguise text.
+    CONTROL_CHARS = /[\p{Cc}\p{Cf}]/.freeze
+
+    MAX_LENGTH = 64
+
     module_function
 
-    # Returns a copy with markup-significant characters removed. Non-strings
-    # pass through untouched so callers can hand us nil or a number safely.
+    # Returns a display-safe copy. Non-strings pass through untouched so
+    # callers can hand us nil or a number safely.
     def display(value)
       return value unless value.is_a?(String)
       value.gsub(MARKUP_CHARS, '')
+           .gsub(CONTROL_CHARS, '')
+           .slice(0, MAX_LENGTH)
     end
   end
 end

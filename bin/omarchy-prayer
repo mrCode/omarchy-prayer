@@ -57,8 +57,12 @@ def cmd_status(argv = [])
     return
   end
 
-  line = "date #{t.date}  source #{t.source}  method #{t.method}  city #{t.city}"
-  line += "  hijri #{t.hijri}" if t.hijri
+  # Sanitised at the sink: city is geolocation-derived and this prints
+  # straight to the terminal. See OmarchyPrayer::Sanitize.
+  require 'omarchy_prayer/sanitize'
+  safe = ->(v) { OmarchyPrayer::Sanitize.display(v.to_s) }
+  line = "date #{t.date}  source #{t.source}  method #{t.method}  city #{safe.call(t.city)}"
+  line += "  hijri #{safe.call(t.hijri)}" if t.hijri
   puts line
 end
 
