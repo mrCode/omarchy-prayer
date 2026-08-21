@@ -51,6 +51,15 @@ flight. Three items are open, none urgent:
 Machine state: `[audio].enabled = false` (adhan silent, notifications fire).
 Location Riyadh, SA. Bar shows the `full` preset, Latin names.
 
+**Plugin state (all three copies agree at 0.3.3):** the marketplace-listed repo
+`mrCode/omarchy-prayer-plugin` (HEAD `2ba0549`, pushed), `share/omarchy-shell-plugin/`
+here, and the live copy at `~/.config/omarchy/plugins/io.github.mrcode.prayer-times/`,
+which `omarchy-prayer setup` refreshed and which diffs byte-identical to the repo.
+**0.3.3 changed the plugin's `manifest.json` version and nothing else — no QML
+or JS changed, so the running shell needed no reload.** The QML fix was 0.3.2;
+all of 0.3.3's fixes are CLI-side. The version is bumped anyway so the two can
+never disagree about what a user has installed.
+
 ---
 
 ## v0.3.3 — geolocation trust boundary (2026-08-21)
