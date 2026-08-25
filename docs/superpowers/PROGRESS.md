@@ -8,9 +8,29 @@
 **Status:** **v0.3.3 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.3`; AUR
 `omarchy-prayer 0.3.3-1`; installed locally and verified through PATH; plugin
 repo synced and pushed. Also listed for the community plugin marketplace.
-Suite: **278 runs, 884–885 assertions, 0 failures, 1 skip** — green under both
+Suite: **278 runs, 884–885 assertions, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
-(assertion count differs by one run to run; not a failure — see task-10 report).
+(assertion count differs by one run to run; not a failure — see task-10 report),
+**with one known flake, see below.**
+
+**KNOWN FLAKE (found 2026-08-25, NOT yet fixed):**
+`TestNotifier#test_audio_spawned_before_blocking_notify_send`. Roughly 1 failure
+in 45 runs when the machine is under CPU load; 8 consecutive unloaded runs were
+clean, so it hides easily. **The product code is correct** — `Notifier#fire`
+calls `Audio#play` before `notify-send`, and no user gets a delayed adhan. The
+TEST is wrong: it infers ordering from the order the shims WRITE to the log, but
+`mpv` is spawned detached, so under load its write can land after
+`notify-send`'s even though the spawn came first.
+
+Why it is worth fixing rather than tolerating: this suite runs in the AUR
+PKGBUILD's `check()`, on the machine of every user who builds the package. A
+build machine is loaded by definition, so a load-sensitive flake means occasional
+install failures for users. Proposed fix: make the `notify-send` shim block for
+~2s (it simulates the blocking action prompt anyway) and assert `mpv` is logged
+BEFORE `fire` returns. That tests the property that actually matters — audio is
+not delayed by the blocking notification — with a seconds-wide margin instead of
+a scheduling-jitter-wide one. See [[feedback-test-isolation]] for the earlier,
+different shim race already fixed in this file.
 
 **Outstanding:** nothing on the code. The design-picker chips were the last
 unverified path and a real human click closed that on 2026-08-21 (see START
