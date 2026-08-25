@@ -151,14 +151,24 @@ through `ruby -e` against a live HOME — write it as a test using
 
 ## User-reported issues
 
-Checked 2026-08-25: **none**. Zero issues on `mrCode/omarchy-prayer-plugin`,
-zero new ones on `mrCode/omarchy-prayer`. The only open issue anywhere is
-[#1](https://github.com/mrCode/omarchy-prayer/issues/1) from 2026-04-22
-(`tomlrb` LoadError on a user-managed Ruby), which was FIXED in AUR
-`0.1.1-2` — shebang pinned to `/usr/bin/ruby`, `ruby-racc` added to depends —
-and left open only pending the reporter's confirmation. Four months on it is
-stale; closing it with a pointer to the fix is reasonable whenever the user
-wants.
+Checked 2026-08-25: **none open anywhere.** Zero issues have ever been filed on
+`mrCode/omarchy-prayer-plugin`; the CLI repo's only issue,
+[#1](https://github.com/mrCode/omarchy-prayer/issues/1) (`tomlrb` LoadError
+under a user-managed Ruby, filed 2026-04-22 by @ecleel), was closed as completed
+on 2026-08-25.
+
+That fix — shebang pinned to `/usr/bin/ruby` instead of `/usr/bin/env ruby`,
+plus `ruby-racc` added to `depends` — shipped in AUR `0.1.1-2` the same day it
+was reported, but the issue was never closed behind it and sat open for four
+months. Before closing, the fix was re-verified against the CURRENT `0.3.3-1`
+package rather than the changelog, on a machine that reproduces the original
+condition: this one has a `mise`-managed Ruby ahead of `/usr/bin/ruby` on
+`PATH`, which is exactly what broke for the reporter.
+
+**Standing habit worth keeping:** when a fix ships in response to a report,
+close the report in the same pass. And when closing something stale, re-verify
+against the current build — a changelog entry is not evidence that a fix
+survived twelve releases.
 
 ---
 
