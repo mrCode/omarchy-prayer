@@ -14,8 +14,9 @@ Suite: **278 runs, 884–885 assertions, 0 failures, 1 skip** — green under bo
 
 **Outstanding:** nothing on the code. The design-picker chips were the last
 unverified path and a real human click closed that on 2026-08-21 (see START
-HERE). The only open item is external: the marketplace listing awaits a
-maintainer.
+HERE), and the marketplace listing published on 2026-08-21. Nothing is
+outstanding. The only thing in flight is a question asked of @ryanrhughes about
+the `manual-setup` badge, which needs no action unless he replies.
 
 **Current machine state:** `[audio].enabled = false` (user turned the adhan off
 after testing) — notifications fire, audio does not. This is also the shipped
@@ -38,12 +39,27 @@ flight. Three items are open, none urgent:
    QML-click verification: watch the FILE, not the pill — the chip could update
    its own selected state without the CLI call landing, so only the config write
    is honest evidence.
-2. **Marketplace listing** — issue #456 on HANCORE-linux/omarchy-plugin-marketplace.
-   Labels: `validated` (the submission metadata passed — this needed the issue
-   BODY to carry all six `SUBMISSION.md` headings; comments do not update
-   metadata), plus `security-review-required`, which a collaborator added after
-   reporting a real vulnerability. The listed repo (mrCode/omarchy-prayer-plugin)
-   now carries 0.3.3.
+2. ~~Marketplace listing.~~ **PUBLISHED 2026-08-21.** Live at
+   https://omarchyplugins.com/plugin.html?id=io.github.mrcode.prayer-times —
+   manifest v0.3.3, verified snapshot `2ba0549`, compatibility PASSED.
+   @ryanrhughes added `approved-and-verified` at 15:07, ~2.5h after the security
+   follow-up went up, and the bot listed and closed #456 two minutes later.
+   `security-review-required` is still attached but sits alongside
+   `approved-and-verified`, so it records that the review happened rather than
+   blocking. Getting `validated` needed the issue BODY to carry all six
+   `SUBMISSION.md` headings — comments do NOT update metadata.
+
+   **Open question, asked 2026-08-25:** the listing carries a `manual-setup`
+   badge ("Standard install cannot produce a functioning plugin"), added by
+   @ryanrhughes at the moment of approval. It is ACCURATE and not a docs gap —
+   the README already leads with the `yay -S omarchy-prayer` block; the widget
+   is a front-end for a system package and cannot work from `omarchy plugin add`
+   alone. Asked him what criterion lifts it, if any (comment 5407659947). A
+   reply of "it stays for anything depending on a distro package" is an
+   acceptable outcome — do not chase it.
+
+   The plugin repo now has tag AND GitHub release `v0.3.3` on `2ba0549`, which
+   fills the listing's previously empty "Repository release" field.
 3. **@ryanrhughes / issue #456 have been told** about the 0.3.2 and 0.3.3
    fixes (comment 5369851004, posted 2026-08-21 with the user's approval). It
    states plainly that the v0.3.1 "fixed" report was wrong, walks all three
@@ -130,6 +146,19 @@ paths → template defaults). Restored from
 `config.toml.corrupted-by-test.<epoch>`. **Never run destructive verification
 through `ruby -e` against a live HOME — write it as a test using
 `with_isolated_home`.** See [[feedback-no-adhoc-scripts-against-live-home]].
+
+---
+
+## User-reported issues
+
+Checked 2026-08-25: **none**. Zero issues on `mrCode/omarchy-prayer-plugin`,
+zero new ones on `mrCode/omarchy-prayer`. The only open issue anywhere is
+[#1](https://github.com/mrCode/omarchy-prayer/issues/1) from 2026-04-22
+(`tomlrb` LoadError on a user-managed Ruby), which was FIXED in AUR
+`0.1.1-2` — shebang pinned to `/usr/bin/ruby`, `ruby-racc` added to depends —
+and left open only pending the reporter's confirmation. Four months on it is
+stale; closing it with a pointer to the fix is reasonable whenever the user
+wants.
 
 ---
 
