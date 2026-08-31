@@ -44,22 +44,53 @@ class TestNotifier < Minitest::Test
     end
   end
 
-  def test_audio_spawned_before_blocking_notify_send
+  # The property that matters: a blocking notify-send must not delay the adhan.
+  # `notify-send --action=` waits for the user to click (or for the daemon to
+  # time out), so if audio were started after it, the adhan would arrive minutes
+  # late.
+  #
+  # This does NOT compare shim log ORDER. mpv is spawned detached, so under CPU
+  # load the kernel can schedule it after the foreground notify-send has already
+  # appended its line — the log inverts while the spawn order is still correct.
+  # That made the old assertion fail about 1 run in 45 on a loaded machine, which
+  # matters because this suite runs in the AUR PKGBUILD's check() on every user
+  # who builds the package.
+  #
+  # Instead: make notify-send block for BLOCK_SECS and require the adhan to be
+  # audible well before it returns. Normal spawn latency is single-digit
+  # milliseconds, so the window below is a ~40x margin; a regression that moved
+  # audio after notify-send could not produce mpv until BLOCK_SECS had elapsed.
+  BLOCK_SECS  = 3
+  DETECT_SECS = 2.0
+
+  def test_audio_starts_during_the_blocking_notify_send
     with_isolated_home do |home|
-      log = with_shims(home, %w[notify-send makoctl mpv])
+      log = with_shims(home, %w[notify-send makoctl mpv],
+                       delays: { 'notify-send' => BLOCK_SECS })
       ENV['OP_SHIM_STDOUT_MAKOCTL'] = 'default'
       adhan, fajr = adhan_files(home)
-      notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time')
-      wait_for_shim(log, 'mpv')
+
+      fired = Thread.new { notifier_for(today, adhan, fajr).fire(prayer: :dhuhr, event: 'on-time') }
+      started = Time.now
+      heard = wait_for_shim(log, 'mpv', timeout: DETECT_SECS)
+      elapsed = Time.now - started
+
+      assert heard,
+             "adhan did not start within #{DETECT_SECS}s while notify-send was blocking " \
+             "for #{BLOCK_SECS}s — audio is being delayed by the notification. " \
+             "log: #{read_shim_log(log).inspect}"
+      assert fired.alive?,
+             'notify-send should still have been blocking when the adhan started; ' \
+             'the shim did not block, so this test proved nothing'
+      fired.join
+
       entries = read_shim_log(log)
-      mpv_idx        = entries.index { |e| e[0] == 'mpv' }
-      action_idx = entries.index do |e|
-        e[0] == 'notify-send' && e.any? { |a| a.start_with?('--action=') }
-      end
-      refute_nil mpv_idx, "mpv not invoked: #{entries.inspect}"
-      refute_nil action_idx, "notify-send --action= not invoked: #{entries.inspect}"
-      assert mpv_idx < action_idx,
-             "audio must spawn before the blocking notify-send --action=, got order: #{entries.inspect}"
+      assert entries.any? { |e| e[0] == 'mpv' && e.include?(adhan) },
+             "wrong audio file: #{entries.inspect}"
+      assert entries.any? { |e| e[0] == 'notify-send' && e.any? { |a| a.start_with?('--action=') } },
+             "no notify-send --action=: #{entries.inspect}"
+      assert_operator elapsed, :<, BLOCK_SECS,
+                      'adhan must start before notify-send returns, not after'
     end
   end
 

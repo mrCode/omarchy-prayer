@@ -25,7 +25,13 @@ module TestHelper
   # Must be called inside with_isolated_home; PATH + OP_SHIM_LOG are restored there.
   # Put a temp dir at the front of PATH holding log-only shims for commands.
   # The shim writes "<name>\t<argv joined by \t>\n" to $OP_SHIM_LOG.
-  def with_shims(home, names)
+  #
+  # `delays` makes a named shim BLOCK for N seconds after logging, so a test can
+  # observe what the caller does while a synchronous command is still running.
+  # The sleep is baked into the generated script rather than passed by env var,
+  # because an env var would outlive the test unless it were added to
+  # with_isolated_home's restore list.
+  def with_shims(home, names, delays: {})
     shim_dir = File.join(home, 'shims')
     log_file = File.join(home, 'shim.log')
     FileUtils.mkdir_p(shim_dir)
@@ -40,6 +46,7 @@ module TestHelper
         # concurrently (detached mpv vs foreground notify-send), splicing two
         # invocations into one corrupted line.
         printf '%s\\n' "$line" >> "$OP_SHIM_LOG"
+        #{delays[name] ? "sleep #{delays[name]}" : ''}
         var="OP_SHIM_STDOUT_#{name.upcase.gsub(/[^A-Z0-9]/, '_')}"
         eval "out=\\"\\$$var\\""
         if [ -n "$out" ]; then printf '%s' "$out"; fi
