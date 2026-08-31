@@ -8,39 +8,62 @@
 **Status:** **v0.3.3 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.3`; AUR
 `omarchy-prayer 0.3.3-1`; installed locally and verified through PATH; plugin
 repo synced and pushed. Also listed for the community plugin marketplace.
-Suite: **278 runs, 884–885 assertions, 1 skip** — green under both
+Suite: **278 runs, 886–888 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
 (assertion count differs by one run to run; not a failure — see task-10 report),
-**with one known flake, see below.**
+**flake fixed 2026-08-31, see below.**
 
-**KNOWN FLAKE (found 2026-08-25, NOT yet fixed):**
-`TestNotifier#test_audio_spawned_before_blocking_notify_send`. Roughly 1 failure
-in 45 runs when the machine is under CPU load; 8 consecutive unloaded runs were
-clean, so it hides easily. **The product code is correct** — `Notifier#fire`
-calls `Audio#play` before `notify-send`, and no user gets a delayed adhan. The
-TEST is wrong: it infers ordering from the order the shims WRITE to the log, but
-`mpv` is spawned detached, so under load its write can land after
-`notify-send`'s even though the spawn came first.
+**FLAKE FIXED 2026-08-31** (`d86a540`), and the suite is green.
+`test_audio_spawned_before_blocking_notify_send` compared the order the two
+shims APPENDED to the log; `mpv` is spawned detached, so under load the kernel
+could schedule it after the foreground `notify-send` had already written. The
+log inverted while the spawn order stayed correct — the product code was never
+wrong. It mattered because this suite runs in the AUR PKGBUILD's `check()` on
+every user who builds the package, and a build machine is loaded by definition.
 
-Why it is worth fixing rather than tolerating: this suite runs in the AUR
-PKGBUILD's `check()`, on the machine of every user who builds the package. A
-build machine is loaded by definition, so a load-sensitive flake means occasional
-install failures for users. Proposed fix: make the `notify-send` shim block for
-~2s (it simulates the blocking action prompt anyway) and assert `mpv` is logged
-BEFORE `fire` returns. That tests the property that actually matters — audio is
-not delayed by the blocking notification — with a seconds-wide margin instead of
-a scheduling-jitter-wide one. See [[feedback-test-isolation]] for the earlier,
-different shim race already fixed in this file.
+Now `test_audio_starts_during_the_blocking_notify_send`: `with_shims` takes
+`delays:`, which makes `notify-send` block 3s (baked into the generated script,
+not an env var, so nothing outlives the test), and the adhan must be audible
+within 2s while it is still blocking. Spawn latency is single-digit ms, so that
+is a ~40x margin. It also asserts the thread is still alive when the adhan
+starts, so it fails loudly rather than passing vacuously if the shim ever stops
+blocking. **Verified by mutation** — moving `Audio#play` after `notify-send`
+makes it fail with a diagnostic naming the delay; production code restored
+byte-identical after. 60 runs under 4-way CPU load: 0 failures, where the old
+assertion failed ~1 in 45 under the same load. Suite runtime grows ~3s.
 
-**Outstanding:** nothing on the code. The design-picker chips were the last
-unverified path and a real human click closed that on 2026-08-21 (see START
-HERE), and the marketplace listing published on 2026-08-21. Nothing is
-outstanding. The only thing in flight is a question asked of @ryanrhughes about
-the `manual-setup` badge, which needs no action unless he replies.
+**Lesson, worth generalising:** the old test asserted on a PROXY (log write
+order) for the property it cared about (spawn order). The proxy held on an idle
+machine and broke under load. Prefer asserting the property itself — here, "the
+adhan is audible while the notification is still blocking."
 
-**Current machine state:** `[audio].enabled = false` (user turned the adhan off
-after testing) — notifications fire, audio does not. This is also the shipped
-default; see [[project-adhan-muted-default]].
+---
+
+## End-to-end pass, 2026-08-31
+
+Run after the flake fix, all through PATH against installed `0.3.3-1`:
+
+- **AUR `check()` under 4-way CPU load** — 278 runs, 0 failures (the condition
+  that used to break it).
+- **Every CLI surface** — `today`, `next`, `status`, `status --json`, `audio`,
+  `bar status`, `bar preset list`, `adhans list`, `--help` exits 0, unknown
+  subcommand exits non-zero.
+- **Widget JSON contract** — all 12 expected keys present, 5 prayers, qibla
+  244 WSW, no control characters in any string. Countdown live (epoch decrements
+  in real time).
+- **systemd** — 6 transient `op-*` timers armed for the remaining prayers plus
+  `omarchy-prayer-schedule.timer`; 0 failed units.
+- **Shell plugin** — 0.3.3 installed, listed in `shell.json`, `omarchy-shell` up.
+- **IPC** — `refresh`, `toggle`, `close` all rc=0.
+- **No drift** — `config.toml` sha256 identical before and after; audio still
+  off.
+
+**Two "findings" during this pass were MY tooling errors, not product bugs.**
+Recorded so they are not re-investigated: (1) transient prayer timers are named
+`op-*`, NOT `omarchy-prayer-*` — searching the latter shows none and looks like
+notifications are dead; (2) the IPC invocation is
+`omarchy-shell -q <target> <method>` (see `bin/omarchy-prayer-schedule:77`), not
+`omarchy-shell ipc call ...`, which returns "Target not found."
 
 ---
 
