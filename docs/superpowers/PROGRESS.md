@@ -1,13 +1,13 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.3.3)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.3.4)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
-**Last updated:** 2026-08-21
-**Branch:** merged to `master` (`fix/geolocation-trust-hardening`, `--no-ff`)
-**Status:** **v0.3.3 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.3`; AUR
-`omarchy-prayer 0.3.3-1`; installed locally and verified through PATH; plugin
-repo synced and pushed. Also listed for the community plugin marketplace.
+**Last updated:** 2026-08-31
+**Branch:** `master` (release commits land directly; no feature branch open)
+**Status:** **v0.3.4 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.4`; AUR
+`omarchy-prayer 0.3.4-1`; installed locally and verified through PATH; plugin
+published on the community plugin marketplace.
 Suite: **278 runs, 886–888 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
 (assertion count differs by one run to run; not a failure — see task-10 report),
@@ -36,6 +36,31 @@ assertion failed ~1 in 45 under the same load. Suite runtime grows ~3s.
 order) for the property it cared about (spawn order). The proxy held on an idle
 machine and broke under load. Prefer asserting the property itself — here, "the
 adhan is audible while the notification is still blocking."
+
+---
+
+## v0.3.4 — ship the notifier test fix (2026-08-31)
+
+Test-only change, released rather than held for the next feature because the
+suite runs in the AUR PKGBUILD's `check()` on every user's build machine, so a
+flaky assertion there means occasional install failures. `check()` was verified
+passing **under 4-way CPU load** before the AUR push, not just on an idle
+machine — that is the condition the fix exists for.
+
+**The plugin manifest deliberately STAYS at 0.3.3.** No QML or JS changed.
+Bumping it would push a new commit to the listed plugin repo, which the
+marketplace would flag as "upstream changes detected" against its verified
+snapshot (`2ba0549`) until a maintainer re-verified — churning a
+security-reviewed listing for a version string describing no change. The widget
+gates on "omarchy-prayer 0.2.1+", not an exact match, so nothing depends on the
+two matching. This is a deliberate exception to the 0.3.3 lockstep note; do not
+"fix" the mismatch without re-reading this.
+
+**Known gap, NOT addressed:** the CLI repo's GitHub *Releases* page still shows
+**v0.1.5 as "Latest"** — every tag from v0.2.0 on was pushed as a bare tag with
+no release entry. Tags exist and the AUR is correct, so nothing is broken, but a
+visitor sees a version four months stale. Backfilling v0.2.0–v0.3.4 as releases
+is a short job whenever the user wants it.
 
 ---
 
