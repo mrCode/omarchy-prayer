@@ -1,12 +1,12 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.0)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.1)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-09-03
 **Branch:** `master` (release commits land directly; no feature branch open)
-**Status:** **v0.4.0 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.0` (all with
-Releases); AUR `omarchy-prayer 0.4.0-1`; installed locally and verified through PATH; plugin
+**Status:** **v0.4.1 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.1` (all with
+Releases); AUR `omarchy-prayer 0.4.1-1`; installed locally and verified through PATH; plugin
 published on the community plugin marketplace.
 Suite: **278 runs, 886–888 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
