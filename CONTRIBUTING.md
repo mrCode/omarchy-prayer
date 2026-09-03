@@ -63,6 +63,15 @@ mkdir -p $XDG_CONFIG_HOME/omarchy-prayer
 ruby -Ilib bin/omarchy-prayer today
 ```
 
+## Releasing
+
+See [RELEASING.md](RELEASING.md). Two gates, both mandatory before the tag is
+pushed, for every release including one-line ones: a **functional check** (suite
+green under both invocations, `check()` green under CPU load, feature exercised
+through PATH on the installed package) and a **security check** (review of the
+release diff, mandatory whenever it touches a display sink, third-party data,
+config writing, subprocesses, or a markup-interpreting renderer).
+
 ## Reporting issues
 
 Include:
