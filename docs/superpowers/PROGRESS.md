@@ -94,46 +94,44 @@ notifications are dead; (2) the IPC invocation is
 
 ## START HERE next session
 
-**v0.3.4 is shipped and every repo is clean and pushed. Nothing is in flight and
-nothing is broken.** Closed work is written up in the sections below — do not
-re-open it. Two items are live, both waiting on other people:
+**v0.4.1 is shipped. Every repo is clean and pushed, nothing is in flight,
+nothing is broken.** Closed work is written up below — do not re-open it. One
+item is live, and it is waiting on someone else:
 
-1. ~~PR #4 debt.~~ **PAID 2026-09-03.** @ch-arslanahmad's three features shipped
-   in v0.4.0, credited in the release notes, the commit, `prayer_icons.rb`, the
-   test header, and the README. PR closed with a comment explaining what changed
-   and why (comment 5532256742). **If they reply wanting to contribute again,
-   the comment promises a review in days, not months — honour that.**
+- **`manual-setup` badge on the marketplace listing.** Asked @ryanrhughes what
+  criterion lifts it (comment 5407659947). The badge is ACCURATE, not a docs
+  gap — the widget fronts an AUR package and cannot work from
+  `omarchy plugin add` alone. "It stays for anything depending on a distro
+  package" is an acceptable answer. **Do not chase this.**
 
-2. **`manual-setup` badge on the marketplace listing** — asked @ryanrhughes what
-   criterion lifts it (comment 5407659947, 2026-08-25). The badge is ACCURATE,
-   not a docs gap. "It stays for anything depending on a distro package" is an
-   acceptable answer. **Do not chase this.**
+**A promise that is still owed:** the PR #4 closing comment tells
+@ch-arslanahmad they will get a review "in days, not months" if they contribute
+again. Honour that if they turn up.
 
-**Machine state: THE USER MOVED TO NEW YORK.** Auto-relocate fired on
-2026-09-03 17:10 and handled it end to end — config now NYC/US, the calculation
-method auto-resolved `Makkah` (SA) -> `ISNA` (US), tz offset `-14400`, month
-cache re-keyed, transient timers rearmed in EDT. Nothing is wrong; do not
-"restore" Riyadh. Bar on the `full` preset, Latin names.
-`[audio].enabled = false`, notifications on — per
-[[project-adhan-muted-default]]. Confirm the config still matches
-`config.toml.bak.pre-audio-enable` before any work that writes to it, and never
-verify against a live HOME
-([[feedback-no-adhoc-scripts-against-live-home]]).
+**Machine state — the user is in NEW YORK.** Auto-relocate moved them on
+2026-09-03 and handled it end to end: config NYC/US, method auto-resolved
+`Makkah` -> `ISNA`, tz `-14400`, cache re-keyed, timers rearmed in EDT. **Do
+not "restore" Riyadh, and do not compare the config against
+`config.toml.bak.pre-audio-enable` — that backup predates the move.** Bar on the
+`full` preset, Latin names, `[audio].enabled = false` per
+[[project-adhan-muted-default]].
 
-**Version state — CLI and plugin are BACK IN LOCKSTEP at 0.4.0**, because
-v0.4.0 genuinely changed the widget (`Model.js` gained the `{icon}` argument,
-`BarWidget.qml` passes it). The marketplace will flag "upstream changes
-detected" against its old verified snapshot until a maintainer re-verifies —
-that churn is correct here and was NOT correct for 0.3.4. The historical note
-below explains why 0.3.4 deliberately did not bump. Superseded detail: CLI was
-**0.3.4** with the plugin manifest at **0.3.3** across all three copies (the
-listed repo `mrCode/omarchy-prayer-plugin` at HEAD `2ba0549`,
-`share/omarchy-shell-plugin/` here, and the live
-`~/.config/omarchy/plugins/io.github.mrcode.prayer-times/`, byte-identical to
-the repo). No QML or JS changed in 0.3.4, and bumping the plugin would make the
-marketplace flag "upstream changes detected" against its verified snapshot until
-a maintainer re-verified. **This mismatch is intentional — read the v0.3.4
-section before "fixing" it.**
+Two hazards that bit this session, both now in memory — read them before any
+verification step that writes or schedules:
+[[feedback-no-adhoc-scripts-against-live-home]] and
+[[feedback-systemd-ignores-home-isolation]]. The second one mis-scheduled a real
+call-to-prayer notification by 75 minutes.
+
+**Version state: CLI 0.4.1, plugin manifest 0.4.0 — deliberately different.**
+No QML or JS changed in 0.4.1, so the plugin repo was not touched and the
+marketplace's verified snapshot is not churned. The rule is in
+[[reference-published-locations]]: bump the manifest only when the widget's code
+actually changes. 0.4.0 bumped it (Model.js gained `{icon}`); 0.3.4 and 0.4.1
+correctly did not.
+
+**Every release from here goes through `RELEASING.md`** — a functional check and
+a security check, both before the tag is pushed, no exceptions. v0.4.0 is the
+case study for why: see the v0.4.1 section.
 
 ---
 
