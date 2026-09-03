@@ -189,4 +189,182 @@ class TestInjectionHardening < Minitest::Test
       assert_includes json['hijri'], '1447'
     end
   end
+
+  # ---- Aladhan timings (found by the v0.4.0 security review) -------------
+
+  # `hijri` was sanitised from this response; `timings` from the SAME response
+  # was not, and split(' ', 2).first only requires "no whitespace" — which an
+  # OSC 52 payload satisfies. It reached the TUI's prayer list raw.
+  def test_aladhan_timings_reject_a_malformed_value_outright
+    require 'omarchy_prayer/aladhan_client'
+    payload = { 'Fajr' => "#{ESC}]52;c;cGF5bG9hZA==#{BEL}", 'Dhuhr' => '12:00 (EDT)' }
+    assert_raises(OmarchyPrayer::AladhanClient::Error) do
+      OmarchyPrayer::AladhanClient.new.send(:strip_timings, payload)
+    end
+  end
+
+  # Rejecting the month is deliberate: TimesSource#safe swallows it and the day
+  # falls through to the offline calculator. Neutralising in place would give
+  # the user a confident 00:00 and a midnight timer.
+  def test_wellformed_timings_pass_through_byte_identical
+    require 'omarchy_prayer/aladhan_client'
+    out = OmarchyPrayer::AladhanClient.new.send(
+      :strip_timings, 'Fajr' => '05:07 (EDT)', 'Dhuhr' => '12:00', 'Asr' => '5:07'
+    )
+    assert_equal({ 'fajr' => '05:07', 'dhuhr' => '12:00', 'asr' => '5:07' }, out)
+  end
+
+  def test_tui_prayer_list_sanitises_times
+    with_isolated_home do
+      FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+      File.write(OmarchyPrayer::Paths.config_file, <<~TOML)
+        [location]
+        latitude  = 24.7136
+        longitude = 46.6753
+        city      = "Riyadh"
+        country   = "SA"
+      TOML
+      hostile = TIMES.merge('fajr' => "#{ESC}]52;c;eA==#{BEL}")
+      OmarchyPrayer::Today.new(
+        date: Date.today.strftime('%Y-%m-%d'), tz_offset: 3 * 3600,
+        city: 'Riyadh', country: 'SA', method: 'Makkah', source: 'api',
+        times: hostile, hijri: nil
+      ).write
+      tui = OmarchyPrayer::TUI.new(out: StringIO.new, input: StringIO.new(''))
+      tui.instance_variable_set(:@cfg, OmarchyPrayer::Config.load)
+      tui.instance_variable_set(:@today, OmarchyPrayer::Today.read)
+      tui.instance_variable_set(:@width, 80)
+      # list_row RETURNS the row; it does not print. Asserting on the output
+      # stream here passed vacuously and survived deleting the fix.
+      row = tui.send(:list_row, :fajr, :dhuhr, Time.now).gsub(/\e\[[0-9;]*m/, '')
+      refute_includes row, ESC, 'escape reached the terminal from timings'
+      refute_includes row, BEL
+      assert_includes row, 'Fajr'
+    end
+  end
+
+  # Isolates tui.rb's own guard. The pipeline test above passes if EITHER
+  # defence is present, so on its own it cannot tell you that `safe()` at
+  # list_row is doing anything. This stand-in skips Today's cleaning entirely.
+  def test_tui_list_row_sanitises_even_unclean_times
+    with_isolated_home do
+      FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+      File.write(OmarchyPrayer::Paths.config_file, <<~TOML)
+        [location]
+        latitude  = 24.7136
+        longitude = 46.6753
+        city      = "Riyadh"
+        country   = "SA"
+      TOML
+      raw = Class.new do
+        def initialize(times) = @times = times
+        attr_reader :times
+        def time_for(prayer)
+          h, m = @times.fetch(prayer).to_s.split(':').map(&:to_i)
+          Time.new(2026, 5, 3, h.to_i, m.to_i, 0, 3 * 3600)
+        end
+      end.new(TIMES.transform_keys(&:to_sym).merge(fajr: "#{ESC}]52;c;eA==#{BEL}"))
+
+      tui = OmarchyPrayer::TUI.new(out: StringIO.new, input: StringIO.new(''))
+      tui.instance_variable_set(:@cfg, OmarchyPrayer::Config.load)
+      tui.instance_variable_set(:@today, raw)
+      tui.instance_variable_set(:@width, 80)
+      row = tui.send(:list_row, :fajr, :dhuhr, Time.now).gsub(/\e\[[0-9;]*m/, '')
+      refute_includes row, ESC, 'list_row must sanitise regardless of Today'
+      refute_includes row, BEL
+    end
+  end
+
+  # A field the app never reads must not be able to fail the whole month —
+  # that would wire a kill switch to Aladhan's schema, and the offline fallback
+  # it lands in cannot compute above ~60 degrees latitude.
+  def test_unused_aladhan_field_of_odd_shape_does_not_fail_the_month
+    require 'omarchy_prayer/aladhan_client'
+    out = OmarchyPrayer::AladhanClient.new.send(:strip_timings,
+      'Fajr' => '05:07 (EDT)', 'Sunrise' => '06:25', 'Dhuhr' => '12:55',
+      'Asr' => '16:35', 'Maghrib' => '19:25', 'Isha' => '20:43',
+      'Midnight' => '2026-09-04T00:55:00-04:00', 'Iso8601' => 'whatever')
+    assert_equal '05:07', out['fajr']
+    refute out.key?('midnight'), 'odd-shaped unused field should be dropped'
+    refute out.key?('iso8601')
+  end
+
+  # Pins REQUIRED to exactly what is displayed. sunrise is fetched but never
+  # shown, so it must not be able to take the month down.
+  def test_required_fields_are_exactly_the_displayed_prayers
+    require 'omarchy_prayer/aladhan_client'
+    assert_equal OmarchyPrayer::Today::ORDER.map(&:to_s).sort,
+                 OmarchyPrayer::AladhanClient::REQUIRED.sort
+  end
+
+  def test_a_malformed_sunrise_does_not_fail_the_month
+    require 'omarchy_prayer/aladhan_client'
+    out = OmarchyPrayer::AladhanClient.new.send(:strip_timings,
+      'Fajr' => '05:07', 'Sunrise' => '-----', 'Dhuhr' => '12:55',
+      'Asr' => '16:35', 'Maghrib' => '19:25', 'Isha' => '20:43')
+    assert_equal '05:07', out['fajr']
+    refute out.key?('sunrise')
+  end
+
+  def test_a_required_field_of_odd_shape_still_fails_the_month
+    require 'omarchy_prayer/aladhan_client'
+    assert_raises(OmarchyPrayer::AladhanClient::Error) do
+      OmarchyPrayer::AladhanClient.new.send(:strip_timings,
+        'Fajr' => '-----', 'Dhuhr' => '12:55')
+    end
+  end
+
+  # nil must stay nil: "" reaches time_for as midnight, and Scheduler would then
+  # arm a real adhan timer at 00:00 instead of skipping the prayer.
+  def test_a_null_timing_is_preserved_not_coerced_to_midnight
+    t = OmarchyPrayer::Today.new(
+      date: '2026-05-03', tz_offset: 3 * 3600, city: 'Riyadh', country: 'SA',
+      method: 'Makkah', source: 'api', times: TIMES.merge('fajr' => nil), hijri: nil
+    )
+    assert_nil t.times[:fajr], 'nil became a schedulable midnight'
+    assert_equal '11:50', t.times[:dhuhr]
+  end
+
+  # The egress half. A payload written by an older version survives in the month
+  # cache and today.json, and TimesSource PREFERS the cache — so ingress
+  # validation alone would keep serving it all month.
+  def test_poisoned_today_json_is_cleaned_on_read
+    with_isolated_home do
+      OmarchyPrayer::Paths.ensure_state_dir
+      File.write(OmarchyPrayer::Paths.today_json, JSON.pretty_generate(
+        'date' => Date.today.strftime('%Y-%m-%d'), 'tz_offset' => 10800,
+        'city' => 'Riyadh', 'country' => 'SA', 'method' => 'Makkah', 'source' => 'cache',
+        'times' => TIMES.merge('fajr' => "#{ESC}]52;c;eA==#{BEL}<span>x</span>"),
+        'hijri' => nil
+      ))
+      t = OmarchyPrayer::Today.read
+      refute_includes t.times[:fajr], ESC, 'cached payload survived into Today'
+      refute_includes t.times[:fajr], BEL
+      refute_includes t.times[:fajr], '<'
+      assert_equal '11:50', t.times[:dhuhr], 'well-formed times must be untouched'
+    end
+  end
+
+  def test_cmd_today_prints_no_control_characters
+    with_isolated_home do
+      FileUtils.mkdir_p(OmarchyPrayer::Paths.config_dir)
+      File.write(OmarchyPrayer::Paths.config_file, <<~TOML)
+        [location]
+        latitude  = 24.7136
+        longitude = 46.6753
+        city      = "Riyadh"
+        country   = "SA"
+      TOML
+      OmarchyPrayer::Paths.ensure_state_dir
+      File.write(OmarchyPrayer::Paths.today_json, JSON.pretty_generate(
+        'date' => Date.today.strftime('%Y-%m-%d'), 'tz_offset' => 10800,
+        'city' => 'Riyadh', 'country' => 'SA', 'method' => 'Makkah', 'source' => 'cache',
+        'times' => TIMES.merge('maghrib' => "#{ESC}]52;c;eA==#{BEL}"), 'hijri' => nil
+      ))
+      bin = File.expand_path('../bin/omarchy-prayer', __dir__)
+      out = IO.popen([RbConfig.ruby, bin, 'today'], err: File::NULL, &:read)
+      refute_includes out, ESC, 'omarchy-prayer today leaked an escape'
+      refute_includes out, BEL
+    end
+  end
 end

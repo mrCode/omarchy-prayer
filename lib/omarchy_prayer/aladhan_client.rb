@@ -83,8 +83,48 @@ module OmarchyPrayer
       "#{y}-#{m}-#{d}"
     end
 
+    # Aladhan returns "05:07 (EDT)"; keep the clock part only.
+    #
+    # The response is third-party data — this file already treats it that way
+    # for `hijri`, which goes through Sanitize. `timings` did not, and
+    # `split(' ', 2).first` constrains the survivor only to "contains no
+    # whitespace", which an OSC 52 clipboard-write payload satisfies. From
+    # there it reaches a raw-mode terminal via the TUI's prayer list. Same
+    # class as the v0.3.3 finding, different trust root.
+    #
+    TIME_TOKEN = /\A\d{1,2}:\d{2}\z/.freeze
+
+    # Only these are ever read — they are exactly `Today::ORDER`. Aladhan also
+    # returns sunrise, imsak, midnight, firstthird and lastthird, and has added
+    # fields before. `sunrise` is displayed nowhere (Today::ORDER excludes it and
+    # test_status pins that), so a malformed sunrise must not cost the user their
+    # month either.
+    REQUIRED = %w[fajr dhuhr asr maghrib isha].freeze
+
+    # A well-formed time passes through byte-identical, so no real response
+    # changes.
+    #
+    # A malformed value in a REQUIRED field rejects the whole month:
+    # TimesSource#safe swallows the error and the day falls through to the
+    # offline calculator, which is what happened before this guard existed
+    # (`nil.split` raised NoMethodError). Neutralising it in place instead would
+    # hand the user a confident 00:00 and a midnight timer — silently wrong
+    # times are worse than a documented fallback.
+    #
+    # A malformed value in any OTHER field is dropped, not raised on. Failing
+    # the month over a field we never read would wire a global kill switch to a
+    # third party's schema: one new key of an unexpected shape would take prayer
+    # times away from every user at once, and the offline fallback it lands in
+    # cannot compute above ~60 degrees latitude.
     def strip_timings(t)
-      t.transform_keys(&:downcase).transform_values { |v| v.split(' ', 2).first }
+      t.transform_keys(&:downcase).each_with_object({}) do |(key, value), out|
+        token = value.to_s.split(' ', 2).first.to_s
+        if token.match?(TIME_TOKEN)
+          out[key] = token
+        elsif REQUIRED.include?(key)
+          raise Error, "malformed timing for #{key}: #{value.inspect}"
+        end
+      end
     end
   end
 end

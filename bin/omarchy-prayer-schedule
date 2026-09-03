@@ -23,56 +23,67 @@ end
 
 OmarchyPrayer::FirstRun.ensure_config!
 OmarchyPrayer::Migrations.run
-cfg = OmarchyPrayer::Config.load
-if cfg.auto_update? && OmarchyPrayer::AutoRelocate.maybe_update(cfg)
+begin
   cfg = OmarchyPrayer::Config.load
-end
-method = resolve_method(cfg)
-date   = Date.today
-key    = date.strftime('%Y-%m-%d')
-tz     = tz_offset_seconds
+  if cfg.auto_update? && OmarchyPrayer::AutoRelocate.maybe_update(cfg)
+    cfg = OmarchyPrayer::Config.load
+  end
+  method = resolve_method(cfg)
+  date   = Date.today
+  key    = date.strftime('%Y-%m-%d')
+  tz     = tz_offset_seconds
 
-offline_fallback = ->(day:, lat:, lon:, method_name:, tz_offset:) {
-  times = OmarchyPrayer::OfflineCalc.compute(
-    date: Date.parse(day), lat: lat, lon: lon, method: method_name, tz_offset: tz_offset
+  offline_fallback = ->(day:, lat:, lon:, method_name:, tz_offset:) {
+    times = OmarchyPrayer::OfflineCalc.compute(
+      date: Date.parse(day), lat: lat, lon: lon, method: method_name, tz_offset: tz_offset
+    )
+    times.each_with_object({}) { |(k, t), h| h[k.to_s] = t.strftime('%H:%M') }
+  }
+
+  client = OmarchyPrayer::AladhanClient.new(
+    base_url: ENV['OMARCHY_PRAYER_ALADHAN_BASE'] || OmarchyPrayer::AladhanClient::DEFAULT_BASE
   )
-  times.each_with_object({}) { |(k, t), h| h[k.to_s] = t.strftime('%H:%M') }
-}
+  source, day = OmarchyPrayer::TimesSource.new(client: client).resolve(
+    year: date.year, month: date.month, day: key,
+    lat: cfg.latitude, lon: cfg.longitude, method_name: method,
+    tz_offset: tz, offline_fallback: offline_fallback
+  )
 
-client = OmarchyPrayer::AladhanClient.new(
-  base_url: ENV['OMARCHY_PRAYER_ALADHAN_BASE'] || OmarchyPrayer::AladhanClient::DEFAULT_BASE
-)
-source, day = OmarchyPrayer::TimesSource.new(client: client).resolve(
-  year: date.year, month: date.month, day: key,
-  lat: cfg.latitude, lon: cfg.longitude, method_name: method,
-  tz_offset: tz, offline_fallback: offline_fallback
-)
+  # Apply per-prayer offsets.
+  cfg.offsets.each do |prayer, minutes|
+    next if minutes.zero?
+    next unless day[prayer.to_s]
+    h, m = day[prayer.to_s].split(':').map(&:to_i)
+    t = Time.new(date.year, date.month, date.day, h, m, 0, tz) + minutes * 60
+    day[prayer.to_s] = t.strftime('%H:%M')
+  end
 
-# Apply per-prayer offsets.
-cfg.offsets.each do |prayer, minutes|
-  next if minutes.zero?
-  next unless day[prayer.to_s]
-  h, m = day[prayer.to_s].split(':').map(&:to_i)
-  t = Time.new(date.year, date.month, date.day, h, m, 0, tz) + minutes * 60
-  day[prayer.to_s] = t.strftime('%H:%M')
+  hijri = day.delete('hijri')
+  today = OmarchyPrayer::Today.new(
+    date: key, tz_offset: tz, city: cfg.city, country: cfg.country,
+    method: method, source: source, times: day, hijri: hijri
+  )
+  today.write
+
+  # Clear stale mute-today from yesterday.
+  File.delete(OmarchyPrayer::Paths.mute_today) if File.exist?(OmarchyPrayer::Paths.mute_today)
+
+  OmarchyPrayer::Scheduler.new.rebuild(today, pre_minutes: cfg.pre_notify_minutes)
+
+  puts "omarchy-prayer: scheduled #{OmarchyPrayer::Today::ORDER.size} prayers for #{key} (#{source}, #{method})"
+
+  # Nudge the Omarchy 4 bar widget so new times show immediately rather than
+  # waiting out its poll. Best-effort: `-q` makes this a no-op when the shell
+  # isn't running, and the scheduler's job is done either way.
+  system('omarchy-shell', '-q', 'io.github.mrcode.prayer-times', 'refresh',
+         out: File::NULL, err: File::NULL)
+
+rescue StandardError => e
+  # Never exit with a bare backtrace: this runs as a systemd unit and every
+  # user-facing command shells out to it via ensure_today!. OfflineCalc raises
+  # Math::DomainError above ~60 degrees latitude when the sun does not cross the
+  # horizon, and a failure here must not take the whole CLI down with it.
+  warn "omarchy-prayer: could not compute today's times — #{e.class}: #{e.message}"
+  warn '  the previous schedule (if any) is left in place; try `omarchy-prayer refresh`'
+  exit 1
 end
-
-hijri = day.delete('hijri')
-today = OmarchyPrayer::Today.new(
-  date: key, tz_offset: tz, city: cfg.city, country: cfg.country,
-  method: method, source: source, times: day, hijri: hijri
-)
-today.write
-
-# Clear stale mute-today from yesterday.
-File.delete(OmarchyPrayer::Paths.mute_today) if File.exist?(OmarchyPrayer::Paths.mute_today)
-
-OmarchyPrayer::Scheduler.new.rebuild(today, pre_minutes: cfg.pre_notify_minutes)
-
-puts "omarchy-prayer: scheduled #{OmarchyPrayer::Today::ORDER.size} prayers for #{key} (#{source}, #{method})"
-
-# Nudge the Omarchy 4 bar widget so new times show immediately rather than
-# waiting out its poll. Best-effort: `-q` makes this a no-op when the shell
-# isn't running, and the scheduler's job is done either way.
-system('omarchy-shell', '-q', 'io.github.mrcode.prayer-times', 'refresh',
-       out: File::NULL, err: File::NULL)

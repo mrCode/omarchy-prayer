@@ -35,6 +35,8 @@ end
 def cmd_today
   ensure_today!
   t = OmarchyPrayer::Today.read
+  # Times are cleaned in Today#initialize; this prints straight to a terminal,
+  # so it is the sibling sink of `status` and the TUI's prayer list.
   OmarchyPrayer::Today::ORDER.each { |p| puts format('%-8s %s', p, t.times[p]) }
 end
 

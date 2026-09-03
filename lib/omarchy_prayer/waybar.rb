@@ -46,21 +46,37 @@ module OmarchyPrayer
       plain_countdown = format_countdown(secs, pill['compact_countdown'] == true)
       countdown = nx['pretty'].to_s.match?(RTL_CHARS) ? "\u200E#{plain_countdown}" : plain_countdown
 
-      text = pill['format']
-        .gsub('{city}',      status['city'].to_s)
-        .gsub('{icon}',      nx['icon'].to_s)
-        .gsub('{prayer}',    prayer_label(nx, pill['colored'] == true))
-        .gsub('{time}',      nx['time'])
-        .gsub('{countdown}', countdown)
+      # ONE pass, block form. The chained-gsub version expanded a substituted
+      # value again on the next pass (a city containing "{prayer}" rendered a
+      # second prayer name), and the string form of gsub treats \0, \&,
+      # backtick and \' in the REPLACEMENT as backreferences — the same trap
+      # Relocate.sub_string documents and avoids.
+      subs = {
+        '{city}'      => pango(status['city']),
+        '{icon}'      => pango(nx['icon']),
+        '{prayer}'    => prayer_label(nx, pill['colored'] == true),
+        '{time}'      => pango(nx['time']),
+        '{countdown}' => pango(countdown)
+      }
+      text = pill['format'].to_s.gsub(/\{(?:city|icon|prayer|time|countdown)\}/) { subs[Regexp.last_match(0)] }
 
       cls = secs / 60 < pill['soon_threshold_minutes'] ? 'prayer-soon' : 'prayer-normal'
-      out = { text: text, class: cls, tooltip: build_tooltip(status) }
-      # Declared ONLY when colouring. `{city}` is geolocation-derived and lands
-      # in this same field; Sanitize strips angle brackets so Pango cannot be
-      # injected either way, but there is no reason to make that sanitiser
-      # load-bearing for users who never asked for colour.
-      out[:markup] = true if pill['colored'] == true
-      JSON.generate(out)
+      JSON.generate(text: text, class: cls, tooltip: build_tooltip(status))
+    end
+
+    # waybar renders this label through Pango markup UNCONDITIONALLY: its
+    # documented JSON contract is {text, tooltip, class, percentage} — there is
+    # no "markup" key to opt in with — and our module snippet does not set
+    # "escape": true. So `Sanitize` stripping angle brackets is load-bearing for
+    # EVERY user, not only those who turn colours on. Do not relax it on the
+    # belief that markup parsing is opt-in; it is not.
+    #
+    # `&` is the other character Pango treats specially, and Sanitize does not
+    # strip it. Unescaped, a legitimate name like "Tom & Jerry" fails
+    # gtk_label_set_markup outright and the module renders BLANK. Escape it on
+    # the way in — after this, the only markup in the string is ours.
+    def pango(value)
+      value.to_s.gsub('&', '&amp;')
     end
 
     # Pango-coloured prayer name, time-of-day palette from PR #4 by
@@ -68,7 +84,7 @@ module OmarchyPrayer
     # own colour and ignores a Pango foreground, so including it would add a
     # span that changes nothing.
     def prayer_label(nx, colored)
-      pretty = nx['pretty'].to_s
+      pretty = pango(nx['pretty'])
       return pretty unless colored
       color = PrayerIcons.color_for(nx['name'])
       return pretty unless color
@@ -98,8 +114,11 @@ module OmarchyPrayer
       compact ? format('%d:%02d', h, m) : "#{h}h #{m}m"
     end
 
+    # Also a markup label (set_tooltip_markup), so it needs the same escaping.
     def build_tooltip(status)
-      status['prayers'].map { |p| format('%-7s %s', p['pretty'], p['time']) }.join("\n")
+      status['prayers']
+        .map { |p| format('%-7s %s', pango(p['pretty']), pango(p['time'])) }
+        .join("\n")
     end
   end
 end

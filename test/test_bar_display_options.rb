@@ -17,9 +17,12 @@ require 'omarchy_prayer/prayer_icons'
 #     system and changes nothing until asked for.
 #   - 12-hour time lives in Status, so the Quickshell panel honours it too,
 #     not just waybar.
-#   - `markup: true` is emitted ONLY when colours are on. The original set it
-#     unconditionally, which enables Pango parsing of `{city}` — geolocation-
-#     derived data — for everyone, whether or not they use colours.
+#   - No `markup` key is emitted at all. The original set `markup: true`
+#     unconditionally; a security review of v0.4.0 established that waybar has
+#     no such key (its contract is {text, tooltip, class, percentage}) and
+#     parses Pango markup on these labels REGARDLESS. So the key was inert and
+#     the reasoning behind making it conditional was wrong — Sanitize is
+#     load-bearing for every user either way.
 class TestBarDisplayOptions < Minitest::Test
   TIMES = { fajr: '04:15', sunrise: '05:35', dhuhr: '11:48',
             asr: '15:18', maghrib: '18:01', isha: '19:21' }.freeze
@@ -112,15 +115,77 @@ class TestBarDisplayOptions < Minitest::Test
   def test_colours_wrap_the_prayer_name_in_a_pango_span
     data = render('colored' => true)
     assert_match(%r{<span color='#[0-9a-fA-F]{6}'>Asr</span>}, data['text'])
-    assert_equal true, data['markup'], 'Pango markup must be declared when colouring'
   end
 
-  # The security-relevant difference from the original PR. `{city}` is
-  # geolocation-derived and flows into this same field; enabling Pango for
-  # users who never asked for colour makes Sanitize load-bearing for nothing.
-  def test_markup_is_absent_unless_colours_are_on
-    refute render.key?('markup'), 'markup must not be declared when colours are off'
+  def test_no_span_when_colours_are_off
     refute_includes render['text'], '<span'
+  end
+
+  # waybar has no `markup` key — its contract is {text, tooltip, class,
+  # percentage} — and parses Pango markup on these labels regardless. Emitting
+  # one would encode a false belief about when Sanitize matters.
+  def test_no_inert_markup_key_is_emitted
+    refute render.key?('markup')
+    refute render('colored' => true).key?('markup')
+  end
+
+  # ---- Pango escaping ----------------------------------------------------
+
+  # An unescaped `&` fails gtk_label_set_markup outright and the module renders
+  # BLANK — and waybar parses markup whether or not colours are on, so this bit
+  # every user with an ampersand in their city, not just those opting in.
+  def test_ampersand_in_city_is_escaped_so_the_label_still_parses
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => 'Tom & Jerry' },
+      'bar'      => { 'format' => '{city} · {prayer}', 'soon_threshold_minutes' => 10 }
+    )
+    text = JSON.parse(OmarchyPrayer::Waybar.render_from_status(
+      OmarchyPrayer::Status.build(today: today, config: cfg, now: now), now: now
+    ))['text']
+    assert_includes text, 'Tom &amp; Jerry'
+    refute_match(/&(?!amp;)/, text, 'a bare & would blank the whole module')
+  end
+
+  def test_ampersand_is_escaped_in_the_tooltip_too
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => 'Riyadh' },
+      'bar'      => { 'format' => '{prayer}', 'soon_threshold_minutes' => 10, 'names' => 'arabic' }
+    )
+    # The fixture must actually contain an `&`, or this asserts nothing.
+    poisoned = OmarchyPrayer::Status.build(today: today, config: cfg, now: now)
+    poisoned['prayers'].first['pretty'] = 'Fajr & Dawn'
+    tip = JSON.parse(OmarchyPrayer::Waybar.render_from_status(poisoned, now: now))['tooltip']
+    assert_includes tip, 'Fajr &amp; Dawn'
+    refute_match(/&(?!amp;)/, tip)
+  end
+
+  # ---- substitution is one pass, block form ------------------------------
+
+  def test_a_substituted_value_is_not_expanded_again
+    data = render('format' => '{city} {prayer}')
+    # city is literally "{prayer}" — it must NOT become a second prayer name
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => '{prayer}' },
+      'bar'      => { 'format' => '{city} {prayer}', 'soon_threshold_minutes' => 10 }
+    )
+    text = JSON.parse(OmarchyPrayer::Waybar.render_from_status(
+      OmarchyPrayer::Status.build(today: today, config: cfg, now: now), now: now
+    ))['text']
+    assert_equal '{prayer} Asr', text
+    refute_nil data
+  end
+
+  # The string form of gsub expands \0 and \& in the REPLACEMENT as
+  # backreferences; Relocate.sub_string documents the same trap.
+  def test_backreference_sequences_in_a_value_are_literal
+    cfg = OmarchyPrayer::Config.new(
+      'location' => { 'latitude' => 24.6869, 'longitude' => 46.7224, 'city' => "x\\0y" },
+      'bar'      => { 'format' => '{city}', 'soon_threshold_minutes' => 10 }
+    )
+    text = JSON.parse(OmarchyPrayer::Waybar.render_from_status(
+      OmarchyPrayer::Status.build(today: today, config: cfg, now: now), now: now
+    ))['text']
+    refute_includes text, '{city}', 'a backreference expanded into the match'
   end
 
   # Only the NAME is wrapped. An emoji carries its own colour and ignores a

@@ -117,7 +117,9 @@ module OmarchyPrayer
 
     def list_row(prayer, next_name, now)
       pretty = PRETTY[prayer]
-      time_s = @today.times[prayer] || '--:--'
+      # Validated at ingress too (AladhanClient::TIME_TOKEN); belt and braces,
+      # because this line is the one the comment on `safe` used to overlook.
+      time_s = safe(@today.times[prayer] || '--:--')
       at = @today.time_for(prayer)
       is_next = next_name == prayer
       is_past = at < now
