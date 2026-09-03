@@ -217,26 +217,43 @@ through `ruby -e` against a live HOME — write it as a test using
 
 ---
 
-## User-reported issues
+## User-reported issues and outside contributions
 
-Checked 2026-08-25: **none open anywhere.** Zero issues have ever been filed on
+Checked 2026-09-04: **no issues open anywhere.** Zero have ever been filed on
 `mrCode/omarchy-prayer-plugin`; the CLI repo's only issue,
-[#1](https://github.com/mrCode/omarchy-prayer/issues/1) (`tomlrb` LoadError
-under a user-managed Ruby, filed 2026-04-22 by @ecleel), was closed as completed
-on 2026-08-25.
+[#1](https://github.com/mrCode/omarchy-prayer/issues/1) (`tomlrb` LoadError under
+a user-managed Ruby), was fixed in AUR `0.1.1-2` the same day it was reported in
+April, sat open for four months because nobody closed it behind the fix, and was
+closed 2026-08-25 after re-verifying against the CURRENT `0.3.4` package on a
+machine that reproduces the original condition (mise Ruby ahead of
+`/usr/bin/ruby` on PATH).
 
-That fix — shebang pinned to `/usr/bin/ruby` instead of `/usr/bin/env ruby`,
-plus `ruby-racc` added to `depends` — shipped in AUR `0.1.1-2` the same day it
-was reported, but the issue was never closed behind it and sat open for four
-months. Before closing, the fix was re-verified against the CURRENT `0.3.3-1`
-package rather than the changelog, on a machine that reproduces the original
-condition: this one has a `mise`-managed Ruby ahead of `/usr/bin/ruby` on
-`PATH`, which is exactly what broke for the reporter.
+**OPEN AND AWAITING A REPLY FROM THE CONTRIBUTOR — [PR #4](https://github.com/mrCode/omarchy-prayer/pull/4).**
+@ch-arslanahmad opened it 2026-06-01: waybar icons, 12-hour time, and Pango
+time-of-day colours, +72/-8 across 6 files, all defaulting to existing
+behaviour, with screenshots. **It sat three months with zero human replies** —
+the only review was a Copilot bot that could not finish. Answered 2026-09-04
+(comment 5532108848).
 
-**Standing habit worth keeping:** when a fix ships in response to a report,
-close the report in the same pass. And when closing something stale, re-verify
-against the current build — a changelog entry is not evidence that a fix
-survived twelve releases.
+It is CONFLICTING and cannot be rebased mechanically: it was written against
+pre-v0.2.0 code and every file it touches was rewritten underneath it —
+`[waybar]` became `[bar]`, `waybar.rb` now renders from the shared `Status`
+structure via `render_from_status`, and v0.3.0 added presets/name
+scripts/compact countdown to the same path.
+
+**The substantive technical point, verified against current code:** the colour
+feature needs `markup: true` plus Pango `<span>`. `{city}` is
+geolocation-derived and flows into that same `text` field
+(`lib/omarchy_prayer/waybar.rb:49`); it is sanitised in `Status.build`
+(`lib/omarchy_prayer/status.rb:26`), so markup is NOT exploitable today — but
+enabling it makes `Sanitize.display` load-bearing for waybar in a way it was
+not before. That must be a deliberate, commented decision, not a side effect.
+
+**COMMITMENT MADE ON THE USER'S BEHALF:** the comment says that if the
+contributor does not reply, the maintainer will port the three features to the
+current renderer, crediting them by name in the commit and release notes. The
+user approved the wording. **If PR #4 goes quiet, that port is owed** — do not
+let it lapse into another three-month silence.
 
 ---
 
