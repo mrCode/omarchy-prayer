@@ -1,12 +1,12 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.3.4)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.0)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
-**Last updated:** 2026-08-31
+**Last updated:** 2026-09-03
 **Branch:** `master` (release commits land directly; no feature branch open)
-**Status:** **v0.3.4 SHIPPED.** GitHub tags `v0.2.0`–`v0.3.4`; AUR
-`omarchy-prayer 0.3.4-1`; installed locally and verified through PATH; plugin
+**Status:** **v0.4.0 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.0` (all with
+Releases); AUR `omarchy-prayer 0.4.0-1`; installed locally and verified through PATH; plugin
 published on the community plugin marketplace.
 Suite: **278 runs, 886–888 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
@@ -98,30 +98,35 @@ notifications are dead; (2) the IPC invocation is
 nothing is broken.** Closed work is written up in the sections below — do not
 re-open it. Two items are live, both waiting on other people:
 
-1. **PR #4 — a debt, not just a ticket.** @ch-arslanahmad's waybar PR (icons,
-   12-hour time, Pango colours) sat three months with no human reply. It was
-   answered 2026-09-04. **The reply promises that if they do not respond, we
-   port their three features to the current renderer and credit them by name in
-   the commit and release notes.** If the PR has gone quiet, that port is owed —
-   do it rather than letting it lapse into another silence. See the
-   "User-reported issues and outside contributions" section for why it cannot be
-   rebased mechanically and for the `markup: true` / `Sanitize` interaction that
-   must be a deliberate decision.
+1. ~~PR #4 debt.~~ **PAID 2026-09-03.** @ch-arslanahmad's three features shipped
+   in v0.4.0, credited in the release notes, the commit, `prayer_icons.rb`, the
+   test header, and the README. PR closed with a comment explaining what changed
+   and why (comment 5532256742). **If they reply wanting to contribute again,
+   the comment promises a review in days, not months — honour that.**
 
 2. **`manual-setup` badge on the marketplace listing** — asked @ryanrhughes what
    criterion lifts it (comment 5407659947, 2026-08-25). The badge is ACCURATE,
    not a docs gap. "It stays for anything depending on a distro package" is an
    acceptable answer. **Do not chase this.**
 
-**Machine state:** Riyadh, SA. Bar on the `full` preset, Latin names.
+**Machine state: THE USER MOVED TO NEW YORK.** Auto-relocate fired on
+2026-09-03 17:10 and handled it end to end — config now NYC/US, the calculation
+method auto-resolved `Makkah` (SA) -> `ISNA` (US), tz offset `-14400`, month
+cache re-keyed, transient timers rearmed in EDT. Nothing is wrong; do not
+"restore" Riyadh. Bar on the `full` preset, Latin names.
 `[audio].enabled = false`, notifications on — per
 [[project-adhan-muted-default]]. Confirm the config still matches
 `config.toml.bak.pre-audio-enable` before any work that writes to it, and never
 verify against a live HOME
 ([[feedback-no-adhoc-scripts-against-live-home]]).
 
-**Version state — the CLI and the plugin deliberately DISAGREE.** CLI is
-**0.3.4**; the plugin manifest stays at **0.3.3** across all three copies (the
+**Version state — CLI and plugin are BACK IN LOCKSTEP at 0.4.0**, because
+v0.4.0 genuinely changed the widget (`Model.js` gained the `{icon}` argument,
+`BarWidget.qml` passes it). The marketplace will flag "upstream changes
+detected" against its old verified snapshot until a maintainer re-verifies —
+that churn is correct here and was NOT correct for 0.3.4. The historical note
+below explains why 0.3.4 deliberately did not bump. Superseded detail: CLI was
+**0.3.4** with the plugin manifest at **0.3.3** across all three copies (the
 listed repo `mrCode/omarchy-prayer-plugin` at HEAD `2ba0549`,
 `share/omarchy-shell-plugin/` here, and the live
 `~/.config/omarchy/plugins/io.github.mrcode.prayer-times/`, byte-identical to
