@@ -25,7 +25,9 @@ module OmarchyPrayer
                            'soon_threshold_minutes' => 10,
                            'names' => 'latin',
                            'compact_countdown' => false,
-                           'quiet_until_minutes' => 0 }
+                           'quiet_until_minutes' => 0,
+                           'time_12h' => false,
+                           'colored' => false }
     }.freeze
 
     attr_reader :raw
@@ -74,6 +76,20 @@ module OmarchyPrayer
     def names_script
       value = @raw['bar']['names'].to_s
       PrayerNames::SCRIPTS.include?(value) ? value : PrayerNames::DEFAULT_SCRIPT
+    end
+
+    # 12-hour clock for every time this project displays on a bar. Lives in
+    # Status rather than the waybar renderer so the Quickshell panel honours it
+    # too. From PR #4 by @ch-arslanahmad.
+    def time_12h?
+      @raw['bar']['time_12h'] == true
+    end
+
+    # Pango-coloured prayer names. waybar only — the Quickshell widget renders
+    # plain text by design and must never interpret markup. From PR #4 by
+    # @ch-arslanahmad.
+    def bar_colored?
+      @raw['bar']['colored'] == true
     end
 
     def compact_countdown?

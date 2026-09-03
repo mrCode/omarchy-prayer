@@ -292,13 +292,79 @@ class TestCliBar < Minitest::Test
     end
   end
 
+  # ---- time12 / colored, ported from PR #4 by @ch-arslanahmad ------------
+
+  def test_time12_on_writes_the_bar_key
+    with_isolated_home do
+      seed
+      out, status = run_bar('time12', 'on')
+      assert_equal 0, status
+      assert_match(/12-hour time: on/, out)
+      assert_equal true, Tomlrb.parse(text)['bar']['time_12h']
+    end
+  end
+
+  def test_time12_off_writes_the_bar_key
+    with_isolated_home do
+      seed
+      run_bar('time12', 'on')
+      out, status = run_bar('time12', 'off')
+      assert_equal 0, status
+      assert_match(/12-hour time: off/, out)
+      assert_equal false, Tomlrb.parse(text)['bar']['time_12h']
+    end
+  end
+
+  def test_colored_on_writes_the_bar_key
+    with_isolated_home do
+      seed
+      out, status = run_bar('colored', 'on')
+      assert_equal 0, status
+      assert_match(/coloured prayer names: on/, out)
+      assert_equal true, Tomlrb.parse(text)['bar']['colored']
+    end
+  end
+
+  def test_time12_rejects_a_bad_value_and_leaves_config_alone
+    with_isolated_home do
+      seed
+      before = text
+      out, status = run_bar('time12', 'maybe')
+      assert_equal 1, status
+      assert_match(/usage: omarchy-prayer bar time12/, out)
+      assert_equal before, text
+    end
+  end
+
+  def test_colored_rejects_a_bad_value_and_leaves_config_alone
+    with_isolated_home do
+      seed
+      before = text
+      out, status = run_bar('colored', 'maybe')
+      assert_equal 1, status
+      assert_match(/usage: omarchy-prayer bar colored/, out)
+      assert_equal before, text
+    end
+  end
+
+  def test_status_reports_the_new_options
+    with_isolated_home do
+      seed
+      run_bar('time12', 'on')
+      out, status = run_bar('status')
+      assert_equal 0, status
+      assert_match(/12-hour time\s+on/, out)
+      assert_match(/coloured names\s+off/, out)
+    end
+  end
+
   def test_unknown_subcommand_prints_usage_and_exits_1
     with_isolated_home do
       seed
       before = text
       out, status = run_bar('flarp')
       assert_equal 1, status
-      assert_match(%r{usage: omarchy-prayer bar \[preset\|names\|compact\|quiet\|status\]}, out)
+      assert_match(%r{usage: omarchy-prayer bar \[preset\|names\|compact\|time12\|colored\|quiet\|status\]}, out)
       assert_equal before, text
     end
   end

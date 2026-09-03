@@ -1,5 +1,6 @@
 require 'json'
 require 'omarchy_prayer/today'
+require 'omarchy_prayer/prayer_icons'
 
 module OmarchyPrayer
   module Waybar
@@ -47,12 +48,31 @@ module OmarchyPrayer
 
       text = pill['format']
         .gsub('{city}',      status['city'].to_s)
-        .gsub('{prayer}',    nx['pretty'])
+        .gsub('{icon}',      nx['icon'].to_s)
+        .gsub('{prayer}',    prayer_label(nx, pill['colored'] == true))
         .gsub('{time}',      nx['time'])
         .gsub('{countdown}', countdown)
 
       cls = secs / 60 < pill['soon_threshold_minutes'] ? 'prayer-soon' : 'prayer-normal'
-      JSON.generate(text: text, class: cls, tooltip: build_tooltip(status))
+      out = { text: text, class: cls, tooltip: build_tooltip(status) }
+      # Declared ONLY when colouring. `{city}` is geolocation-derived and lands
+      # in this same field; Sanitize strips angle brackets so Pango cannot be
+      # injected either way, but there is no reason to make that sanitiser
+      # load-bearing for users who never asked for colour.
+      out[:markup] = true if pill['colored'] == true
+      JSON.generate(out)
+    end
+
+    # Pango-coloured prayer name, time-of-day palette from PR #4 by
+    # @ch-arslanahmad. Only the NAME is wrapped: the `{icon}` emoji carries its
+    # own colour and ignores a Pango foreground, so including it would add a
+    # span that changes nothing.
+    def prayer_label(nx, colored)
+      pretty = nx['pretty'].to_s
+      return pretty unless colored
+      color = PrayerIcons.color_for(nx['name'])
+      return pretty unless color
+      "<span color='#{color}'>#{pretty}</span>"
     end
 
     # Historical signature, kept so callers passing loose args keep working.

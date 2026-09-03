@@ -123,16 +123,48 @@ omarchy-prayer audio toggle
 }
 ```
 
-Both widgets support four placeholders in `bar.format`:
+Both widgets support five placeholders in `bar.format`:
 
 | Placeholder    | Renders as                    |
 |----------------|-------------------------------|
 | `{city}`       | current city (e.g. `London`)  |
 | `{prayer}`     | next prayer name (e.g. `Maghrib`) |
+| `{icon}`       | emoji for the next prayer (🌛 ☀️ ⛅ 🌇 🌙) |
 | `{time}`       | next prayer time (e.g. `18:01`) |
 | `{countdown}`  | remaining time (e.g. `1h 12m`) |
 
 Default format is `{city} · {prayer} {countdown}`. Omit `{city}` from the format to hide it.
+
+### Display options
+
+Two more keys under `[bar]`, both off by default:
+
+| Option     | Default | Applies to | Description |
+|------------|---------|------------|-------------|
+| `time_12h` | `false` | both bars  | 12-hour AM/PM times in the pill, tooltip, and panel |
+| `colored`  | `false` | waybar     | colour the prayer name by time of day (Pango markup) |
+
+```toml
+[bar]
+format   = "{icon} {prayer} {countdown}"
+time_12h = true
+colored  = true
+```
+
+Or from the CLI:
+
+```bash
+omarchy-prayer bar time12 on
+omarchy-prayer bar colored on
+```
+
+`colored` is waybar-only: the Quickshell widget renders plain text by design, so
+markup would show up there as literal tags rather than colour. It also switches
+waybar's module into Pango markup mode, which is why it is opt-in.
+
+Icons, 12-hour time, and the time-of-day palette were contributed by
+[@ch-arslanahmad](https://github.com/ch-arslanahmad) in
+[#4](https://github.com/mrCode/omarchy-prayer/pull/4).
 
 Optional CSS for the "prayer time soon" amber tint:
 

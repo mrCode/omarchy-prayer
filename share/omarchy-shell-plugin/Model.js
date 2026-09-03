@@ -34,15 +34,20 @@ function shouldCollapse(secs, quietMinutes) {
 // Substitute the pill placeholders. Runs on every countdown tick, so it stays
 // allocation-light and side-effect free.
 //
+// {icon} is a per-prayer emoji from PR #4 by @ch-arslanahmad, supplied by the
+// CLI in status.next.icon. It is a placeholder rather than a toggle so an
+// upgrade never changes a pill nobody asked to change.
+//
 // The countdown substitution is prefixed with U+200E (LEFT-TO-RIGHT MARK).
 // When {prayer} is an RTL string (e.g. Arabic "العشاء"), the bidi algorithm
 // can pull leading LTR digits of the adjacent countdown across the RTL run,
 // visually reordering "1h 26m" around the prayer name. The LRM anchors the
 // countdown's direction without adding a visible character or touching the
 // format string itself (which would break the Latin case).
-function renderPill(format, city, prayer, time, countdown) {
+function renderPill(format, city, prayer, time, countdown, icon) {
   return plain(String(format === undefined || format === null ? "" : format)
     .replace(/\{city\}/g, city || "")
+    .replace(/\{icon\}/g, icon || "")
     .replace(/\{prayer\}/g, prayer || "")
     .replace(/\{time\}/g, time || "")
     .replace(/\{countdown\}/g, countdown ? "‎" + countdown : ""))

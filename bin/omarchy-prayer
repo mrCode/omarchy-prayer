@@ -109,10 +109,12 @@ def cmd_bar(argv)
   when 'preset'      then bar_preset(arg)
   when 'names'       then bar_names(arg)
   when 'compact'     then bar_compact(arg)
+  when 'time12'      then bar_time12(arg)
+  when 'colored'     then bar_colored(arg)
   when 'quiet'       then bar_quiet(arg)
   when 'status'      then bar_status
   else
-    warn 'usage: omarchy-prayer bar [preset|names|compact|quiet|status]'
+    warn 'usage: omarchy-prayer bar [preset|names|compact|time12|colored|quiet|status]'
     exit 1
   end
 end
@@ -170,6 +172,34 @@ def bar_compact(value)
   puts "bar compact countdown: #{state ? 'on' : 'off'}"
 end
 
+def bar_time12(value)
+  state = bar_bool(value) { 'usage: omarchy-prayer bar time12 <on|off>' }
+  OmarchyPrayer::BarSetting.set('time_12h', state)
+  puts "bar 12-hour time: #{state ? 'on' : 'off'}"
+end
+
+# waybar only: the Quickshell widget renders plain text by design, so Pango
+# markup would show up as literal tags there rather than as colour.
+def bar_colored(value)
+  state = bar_bool(value) { 'usage: omarchy-prayer bar colored <on|off>' }
+  OmarchyPrayer::BarSetting.set('colored', state)
+  puts "bar coloured prayer names: #{state ? 'on' : 'off'}"
+  if state && OmarchyPrayer::BarDetect.detect != :waybar
+    warn 'omarchy-prayer: note — coloured names are a waybar feature; the ' \
+         'Quickshell widget renders plain text and will ignore this.'
+  end
+end
+
+def bar_bool(value)
+  case value
+  when 'on', 'true'   then true
+  when 'off', 'false' then false
+  else
+    warn yield
+    exit 1
+  end
+end
+
 def bar_quiet(value)
   unless value.to_s.match?(/\A\d+\z/)
     warn 'usage: omarchy-prayer bar quiet <minutes>   (0 disables)'
@@ -186,6 +216,8 @@ def bar_status
   puts "format            #{cfg.bar_format.inspect}"
   puts "names             #{cfg.names_script}"
   puts "compact countdown #{cfg.compact_countdown? ? 'on' : 'off'}"
+  puts "12-hour time      #{cfg.time_12h? ? 'on' : 'off'}"
+  puts "coloured names    #{cfg.bar_colored? ? 'on' : 'off'}"
   puts "quiet until       #{cfg.quiet_until_minutes.zero? ? 'off' : "#{cfg.quiet_until_minutes}m"}"
 end
 
@@ -290,7 +322,7 @@ when '-h', '--help', 'help'
       relocate      update [location] (re-detect via IP, or pass --lat/--lon/--city/--country)
       mute-today    toggle today-only mute flag
       audio         adhan audio on|off|toggle|status
-      bar           pill design: preset|names|compact|quiet|status
+      bar           pill design: preset|names|compact|time12|colored|quiet|status
       adhans        manage adhan audio library (list|download|set|current)
       setup         download default adhans, patch waybar config, enable timers
   USAGE

@@ -3,6 +3,7 @@ require 'omarchy_prayer/today'
 require 'omarchy_prayer/qibla'
 require 'omarchy_prayer/paths'
 require 'omarchy_prayer/prayer_names'
+require 'omarchy_prayer/prayer_icons'
 require 'omarchy_prayer/sanitize'
 
 module OmarchyPrayer
@@ -18,6 +19,7 @@ module OmarchyPrayer
       next_name, next_at = today.next_prayer(now: now)
       degrees = Qibla.bearing(config.latitude, config.longitude)
       script  = config.names_script
+      clock12 = config.time_12h?
 
       {
         # Sanitised on the way out as well as on the way in: an existing
@@ -28,11 +30,12 @@ module OmarchyPrayer
         'date'    => today.date,
         # Aladhan's response, not ours — same trust class as city.
         'hijri'   => Sanitize.display(today.hijri),
-        'prayers' => Today::ORDER.map { |p| prayer_entry(today, p, now, script) },
+        'prayers' => Today::ORDER.map { |p| prayer_entry(today, p, now, script, clock12) },
         'next'    => {
           'name'   => next_name.to_s,
           'pretty' => PrayerNames.pretty(next_name, script: script),
-          'time'   => next_at.strftime('%H:%M'),
+          'icon'   => PrayerIcons.for(next_name),
+          'time'   => clock(next_at, clock12),
           'epoch'  => next_at.to_i
         },
         'qibla'   => { 'degrees' => degrees, 'compass' => Qibla.cardinal(degrees) },
@@ -47,21 +50,32 @@ module OmarchyPrayer
           'soon_threshold_minutes' => config.soon_threshold_minutes,
           'preset'                 => config.bar_preset,
           'compact_countdown'      => config.compact_countdown?,
-          'quiet_until_minutes'    => config.quiet_until_minutes
+          'quiet_until_minutes'    => config.quiet_until_minutes,
+          'time_12h'               => config.time_12h?,
+          # waybar-only; the Quickshell widget ignores it and renders plain text.
+          'colored'                => config.bar_colored?
         }
       }
+    end
+
+    # 24-hour stays byte-identical to what shipped: `today.times` is passed
+    # through untouched rather than reformatted, so no existing bar changes.
+    def clock(at, twelve_hour)
+      return at.strftime('%H:%M') unless twelve_hour
+      at.strftime('%l:%M %p').strip
     end
 
     def to_json(today:, config:, now: Time.now)
       JSON.generate(build(today: today, config: config, now: now))
     end
 
-    def prayer_entry(today, prayer, now, script = PrayerNames::DEFAULT_SCRIPT)
+    def prayer_entry(today, prayer, now, script = PrayerNames::DEFAULT_SCRIPT, clock12 = false)
       at = today.time_for(prayer)
       {
         'name'   => prayer.to_s,
         'pretty' => PrayerNames.pretty(prayer, script: script),
-        'time'   => today.times[prayer],
+        'icon'   => PrayerIcons.for(prayer),
+        'time'   => clock12 ? clock(at, true) : today.times[prayer],
         'epoch'  => at.to_i,
         'passed' => at <= now
       }

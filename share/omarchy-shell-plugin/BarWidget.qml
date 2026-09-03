@@ -38,7 +38,7 @@ BarWidget {
 
   readonly property string pillText: ready
     ? Model.renderPill(prayerData.pill.format, prayerData.city, prayerData.next.pretty,
-                       prayerData.next.time, countdown)
+                       prayerData.next.time, countdown, prayerData.next.icon)
     : "—"
 
   // In a collapsed state the pill shows no text, so the times have to stay
