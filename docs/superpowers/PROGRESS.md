@@ -94,61 +94,41 @@ notifications are dead; (2) the IPC invocation is
 
 ## START HERE next session
 
-Everything is shipped and every repo is clean and pushed. There is no work in
-flight. Three items are open, none urgent:
+**v0.3.4 is shipped and every repo is clean and pushed. Nothing is in flight and
+nothing is broken.** Closed work is written up in the sections below — do not
+re-open it. Two items are live, both waiting on other people:
 
-1. ~~Click the design-picker chips.~~ **CLOSED 2026-08-21 — verified by a real
-   human click.** The user clicked Minimal in the panel while an `inotifywait`
-   watcher sat on `config.toml`; it caught `full` -> `minimal` within a second,
-   and three consecutive `status --json` reads then agreed with disk. The whole
-   path is exercised for real: click -> `setPreset()` -> `bar.run` -> CLI
-   rewrite -> widget re-read. The silent-`bar.run`-failure mode this item
-   existed to rule out is ruled out. Method worth reusing for any future
-   QML-click verification: watch the FILE, not the pill — the chip could update
-   its own selected state without the CLI call landing, so only the config write
-   is honest evidence.
-2. ~~Marketplace listing.~~ **PUBLISHED 2026-08-21.** Live at
-   https://omarchyplugins.com/plugin.html?id=io.github.mrcode.prayer-times —
-   manifest v0.3.3, verified snapshot `2ba0549`, compatibility PASSED.
-   @ryanrhughes added `approved-and-verified` at 15:07, ~2.5h after the security
-   follow-up went up, and the bot listed and closed #456 two minutes later.
-   `security-review-required` is still attached but sits alongside
-   `approved-and-verified`, so it records that the review happened rather than
-   blocking. Getting `validated` needed the issue BODY to carry all six
-   `SUBMISSION.md` headings — comments do NOT update metadata.
+1. **PR #4 — a debt, not just a ticket.** @ch-arslanahmad's waybar PR (icons,
+   12-hour time, Pango colours) sat three months with no human reply. It was
+   answered 2026-09-04. **The reply promises that if they do not respond, we
+   port their three features to the current renderer and credit them by name in
+   the commit and release notes.** If the PR has gone quiet, that port is owed —
+   do it rather than letting it lapse into another silence. See the
+   "User-reported issues and outside contributions" section for why it cannot be
+   rebased mechanically and for the `markup: true` / `Sanitize` interaction that
+   must be a deliberate decision.
 
-   **Open question, asked 2026-08-25:** the listing carries a `manual-setup`
-   badge ("Standard install cannot produce a functioning plugin"), added by
-   @ryanrhughes at the moment of approval. It is ACCURATE and not a docs gap —
-   the README already leads with the `yay -S omarchy-prayer` block; the widget
-   is a front-end for a system package and cannot work from `omarchy plugin add`
-   alone. Asked him what criterion lifts it, if any (comment 5407659947). A
-   reply of "it stays for anything depending on a distro package" is an
-   acceptable outcome — do not chase it.
+2. **`manual-setup` badge on the marketplace listing** — asked @ryanrhughes what
+   criterion lifts it (comment 5407659947, 2026-08-25). The badge is ACCURATE,
+   not a docs gap. "It stays for anything depending on a distro package" is an
+   acceptable answer. **Do not chase this.**
 
-   The plugin repo now has tag AND GitHub release `v0.3.3` on `2ba0549`, which
-   fills the listing's previously empty "Repository release" field.
-3. **@ryanrhughes / issue #456 have been told** about the 0.3.2 and 0.3.3
-   fixes (comment 5369851004, posted 2026-08-21 with the user's approval). It
-   states plainly that the v0.3.1 "fixed" report was wrong, walks all three
-   v0.3.3 findings, and offers to hold the listing pending review. Nothing to do
-   but wait for a reply.
+**Machine state:** Riyadh, SA. Bar on the `full` preset, Latin names.
+`[audio].enabled = false`, notifications on — per
+[[project-adhan-muted-default]]. Confirm the config still matches
+`config.toml.bak.pre-audio-enable` before any work that writes to it, and never
+verify against a live HOME
+([[feedback-no-adhoc-scripts-against-live-home]]).
 
-Machine state: Location Riyadh, SA. Bar back on the **`full`** preset, Latin
-names — the user cycled through the chips during the verification and returned
-to `full`. `[audio].enabled = false`, notifications on: the panel's Adhan toggle
-got caught alongside the design chips, the user was told rather than having it
-changed for them, and they asked for it off at 18:2x on 2026-08-21. This is the
-standing state per [[project-adhan-muted-default]].
-
-**Plugin state (all three copies agree at 0.3.3):** the marketplace-listed repo
-`mrCode/omarchy-prayer-plugin` (HEAD `2ba0549`, pushed), `share/omarchy-shell-plugin/`
-here, and the live copy at `~/.config/omarchy/plugins/io.github.mrcode.prayer-times/`,
-which `omarchy-prayer setup` refreshed and which diffs byte-identical to the repo.
-**0.3.3 changed the plugin's `manifest.json` version and nothing else — no QML
-or JS changed, so the running shell needed no reload.** The QML fix was 0.3.2;
-all of 0.3.3's fixes are CLI-side. The version is bumped anyway so the two can
-never disagree about what a user has installed.
+**Version state — the CLI and the plugin deliberately DISAGREE.** CLI is
+**0.3.4**; the plugin manifest stays at **0.3.3** across all three copies (the
+listed repo `mrCode/omarchy-prayer-plugin` at HEAD `2ba0549`,
+`share/omarchy-shell-plugin/` here, and the live
+`~/.config/omarchy/plugins/io.github.mrcode.prayer-times/`, byte-identical to
+the repo). No QML or JS changed in 0.3.4, and bumping the plugin would make the
+marketplace flag "upstream changes detected" against its verified snapshot until
+a maintainer re-verified. **This mismatch is intentional — read the v0.3.4
+section before "fixing" it.**
 
 ---
 
