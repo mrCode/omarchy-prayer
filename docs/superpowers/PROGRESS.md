@@ -1,12 +1,12 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.1)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.2)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-09-03
 **Branch:** `master` (release commits land directly; no feature branch open)
-**Status:** **v0.4.1 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.1` (all with
-Releases); AUR `omarchy-prayer 0.4.1-1`; installed locally and verified through PATH; plugin
+**Status:** **v0.4.2 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.2` (all with
+Releases); AUR `omarchy-prayer 0.4.2-1`; installed locally and verified through PATH; plugin
 published on the community plugin marketplace.
 Suite: **278 runs, 886–888 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
@@ -108,7 +108,11 @@ item is live, and it is waiting on someone else:
 @ch-arslanahmad they will get a review "in days, not months" if they contribute
 again. Honour that if they turn up.
 
-**Machine state — the user is in NEW YORK.** Auto-relocate moved them on
+**Machine state — the user is in PALO ALTO, pinned.** `auto_update = false`,
+set deliberately as the workaround for the v0.4.2 bug and still correct. IP
+geolocation from this connection reports San Diego, ~694 km off; do NOT "fix"
+the config to match it. Earlier note (superseded): the user was in New York.
+Historical: Auto-relocate moved them on
 2026-09-03 and handled it end to end: config NYC/US, method auto-resolved
 `Makkah` -> `ISNA`, tz `-14400`, cache re-keyed, timers rearmed in EDT. **Do
 not "restore" Riyadh, and do not compare the config against
