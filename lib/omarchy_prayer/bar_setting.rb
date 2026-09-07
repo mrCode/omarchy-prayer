@@ -1,7 +1,9 @@
 require 'omarchy_prayer/paths'
 
 module OmarchyPrayer
-  # Reads and writes single keys inside the [bar] section of config.toml.
+  # Reads and writes single keys inside one section of config.toml. Defaults to
+  # [bar]; `section:` targets another, which `Relocate` uses to pin
+  # [location].auto_update.
   #
   # Text-level rewrite rather than a TOML round-trip, for the same reason as
   # AudioSetting: config.toml is hand-edited and full of comments and column
@@ -12,21 +14,28 @@ module OmarchyPrayer
 
     module_function
 
-    def get(key, path = Paths.config_file)
+    def get(key, path = Paths.config_file, section: SECTION)
       return nil unless File.exist?(path)
+      target = section
       each_line_with_section(File.read(path)) do |line, section|
-        next unless section == SECTION
+        next unless section == target
         m = line.match(/\A\s*#{Regexp.escape(key)}\s*=\s*(.*?)\s*\z/m)
         return unquote(m[1]) if m
       end
       nil
     end
 
+    # A section name is interpolated raw when append_key has to write a new
+    # header, so it must never carry TOML syntax. Every caller passes a literal
+    # today; this keeps that true if one ever stops.
+    SECTION_NAME = /\A[A-Za-z0-9_.\-]+\z/.freeze
+
     # Returns the written value, or nil when there is no config to write.
-    def set(key, value, path = Paths.config_file)
+    def set(key, value, path = Paths.config_file, section: SECTION)
+      raise ArgumentError, "invalid config section #{section.inspect}" unless section.match?(SECTION_NAME)
       return nil unless File.exist?(path)
       text = File.read(path)
-      rewritten = replace_key(text, key, value) || append_key(text, key, value)
+      rewritten = replace_key(text, key, value, section) || append_key(text, key, value, section)
       File.write(path, rewritten) unless rewritten == text
       value
     end
@@ -60,11 +69,11 @@ module OmarchyPrayer
     end
 
     # Returns nil when the key is not present, so the caller can append.
-    def replace_key(text, key, value)
+    def replace_key(text, key, value, target = SECTION)
       found = false
       out = []
       each_line_with_section(text) do |line, section|
-        if section == SECTION &&
+        if section == target &&
            (m = line.match(/\A(\s*#{Regexp.escape(key)}\s*=\s*)(.*)\z/m))
           found = true
           _old_value, trailing = split_value_and_trailing(m[2])
@@ -105,7 +114,7 @@ module OmarchyPrayer
       end
     end
 
-    def append_key(text, key, value)
+    def append_key(text, key, value, target = SECTION)
       # Normalise first so every element of `text.lines` is newline-terminated.
       # Without this, a [bar] section at end-of-file with no trailing newline
       # leaves its last line unterminated; concatenating the new key line
@@ -116,7 +125,7 @@ module OmarchyPrayer
       lines = normalized.lines
       lines.each_with_index do |line, i|
         out << line
-        next unless !inserted && line.match(/\A\s*\[#{SECTION}\]\s*\z/)
+        next unless !inserted && line.match(/\A\s*\[#{Regexp.escape(target)}\]\s*(?:\#[^\n]*)?\s*\z/)
         # Insert after the last line of the section so appended keys group
         # together rather than splitting the section header from its body.
         j = i + 1
@@ -130,7 +139,7 @@ module OmarchyPrayer
       return out.join if inserted
 
       separator = normalized.empty? ? '' : "\n"
-      "#{normalized}#{separator}[#{SECTION}]\n#{key} = #{literal(value)}\n"
+      "#{normalized}#{separator}[#{target}]\n#{key} = #{literal(value)}\n"
     end
 
     def ensure_trailing_newline(text)
@@ -141,7 +150,15 @@ module OmarchyPrayer
     def each_line_with_section(text)
       section = nil
       text.each_line do |line|
-        if (m = line.match(/\A\s*\[([^\]]+)\]\s*\z/))
+        # `[location]  # my home` is valid TOML. Missing the trailing comment
+        # made the section invisible to BOTH writer paths: replace_key never
+        # matched it, and append_key fell through to the end-of-file fallback
+        # and wrote a SECOND [location] table — which tomlrb then refuses to
+        # parse, taking down every entry point until the user repairs the file
+        # by hand. Reader and writer must agree on this pattern. Note `\s*\z`
+        # after the comment group: `\z` includes the line's own newline, which
+        # `.` cannot cross, so the group alone would never match.
+        if (m = line.match(/\A\s*\[([^\]]+)\]\s*(?:\#[^\n]*)?\s*\z/))
           section = m[1].strip
         end
         yield(line, section)

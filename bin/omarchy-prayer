@@ -232,6 +232,18 @@ def cmd_relocate(argv)
   require 'omarchy_prayer/relocate'
   OmarchyPrayer::Relocate.run(argv)
   schedule = File.expand_path('omarchy-prayer-schedule', __dir__)
+  # exec replaces the process image WITHOUT flushing Ruby's stdout buffer. On a
+  # TTY that is line-buffered and the confirmation appears; through a pipe or a
+  # redirect it is block-buffered and silently lost — while the scheduler's
+  # stderr still shows, which makes the command look like it did something else.
+  # Guarded: with nothing reading stdout (`... | grep -q`), flush raises EPIPE.
+  # Letting that escape would skip the exec entirely, leaving the location
+  # pinned but the timers never rebuilt — worse than the lost line it fixes.
+  begin
+    $stdout.flush
+  rescue Errno::EPIPE, IOError
+    nil
+  end
   exec(schedule)
 end
 
@@ -321,7 +333,8 @@ when '-h', '--help', 'help'
       next          print next prayer name + time
       status        print source/method/city/hijri line (--json for structured output)
       refresh       re-run the scheduler
-      relocate      update [location] (re-detect via IP, or pass --lat/--lon/--city/--country)
+      relocate      re-detect location via IP; --lat/--lon/--city/--country pins
+                    it (disables auto-update), --auto resumes tracking
       mute-today    toggle today-only mute flag
       audio         adhan audio on|off|toggle|status
       bar           pill design: preset|names|compact|time12|colored|quiet|status

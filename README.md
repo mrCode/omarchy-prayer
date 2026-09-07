@@ -227,12 +227,15 @@ To disable auto-update — for example, if you want the schedule pinned to a cit
 
 ```bash
 omarchy-prayer relocate                                            # one-shot re-detect via IP
-omarchy-prayer relocate --lat 21.4225 --lon 39.8262 --city Makkah --country SA   # manual override
+omarchy-prayer relocate --lat 21.4225 --lon 39.8262 --city Makkah --country SA   # manual override (pins)
+omarchy-prayer relocate --auto                                     # resume automatic tracking
 ```
 
 `relocate` rewrites the `[location]` block in `config.toml` (preserving comments and other settings), invalidates cached month data so prayer times for the new location are fetched fresh, and runs the scheduler so today's times take effect immediately.
 
-Location detection cross-checks IP geolocation against your system timezone (`/etc/localtime`). If you're roaming through a foreign carrier or behind a VPN that places your IP in a different country, the system timezone takes precedence — so `omarchy-prayer` won't auto-relocate you to the carrier's country. To override manually:
+**A manual override pins your location.** Passing `--lat/--lon/--city/--country` also sets `auto_update = false`, and says so, because otherwise the very scheduler run that `relocate` launches would re-detect by IP and overwrite the coordinates you just set. Use `omarchy-prayer relocate --auto` to resume automatic tracking.
+
+Location detection cross-checks IP geolocation against your system timezone (`/etc/localtime`). If you're roaming through a foreign carrier or behind a VPN that places your IP in a different country, the system timezone takes precedence — so `omarchy-prayer` won't auto-relocate you to the carrier's country. Note this compares **countries**: it will not catch a bad IP result that lands hundreds of kilometres away inside the same country, which does happen — pin your location manually if your provider misplaces you. To override manually:
 
 ```bash
 omarchy-prayer relocate --lat 51.5074 --lon -0.1278 --city London --country GB

@@ -14,7 +14,9 @@ module OmarchyPrayer
       city        = %<city>s
       country     = %<country>s
       # Re-detect on every schedule run (daily, on resume, on network up).
-      # Set to false to pin location and only update via `omarchy-prayer relocate`.
+      # A manual `omarchy-prayer relocate --lat ... --lon ...` sets this to
+      # false for you, so the location you pin sticks. `relocate --auto`
+      # turns it back on.
       auto_update = true
 
       [method]
