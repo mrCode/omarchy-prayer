@@ -39,6 +39,12 @@ omarchy-shell -q io.github.mrcode.prayer-times refresh
 
 # 5. The user's own config must be untouched by all of the above
 sha256sum ~/.config/omarchy-prayer/config.toml   # compare before/after
+
+# 6. Read `git status` before committing. `git add -A` sweeps up scratch files,
+#    and a release commit is the worst place to discover that — the tag is
+#    immutable and its tarball is what the AUR checksums, so anything that
+#    lands in it ships. (v0.4.2 shipped a stray bug-report markdown this way.)
+git status --short
 ```
 
 Confirm `[audio].enabled = false` unless the user deliberately turned it on, and
