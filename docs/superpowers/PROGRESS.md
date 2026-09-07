@@ -94,48 +94,47 @@ notifications are dead; (2) the IPC invocation is
 
 ## START HERE next session
 
-**v0.4.1 is shipped. Every repo is clean and pushed, nothing is in flight,
-nothing is broken.** Closed work is written up below — do not re-open it. One
-item is live, and it is waiting on someone else:
+> **Rewrite this section, do not append to it.** It has drifted three times by
+> accumulating struck-through items and superseded machine state. It answers one
+> question — what should the next session do, and what is true right now.
+> Everything historical belongs in the dated sections below.
 
-- **`manual-setup` badge on the marketplace listing.** Asked @ryanrhughes what
-  criterion lifts it (comment 5407659947). The badge is ACCURATE, not a docs
-  gap — the widget fronts an AUR package and cannot work from
-  `omarchy plugin add` alone. "It stays for anything depending on a distro
-  package" is an acceptable answer. **Do not chase this.**
+**v0.4.2 is shipped. Every repo is clean and pushed. Nothing is in flight.**
 
-**A promise that is still owed:** the PR #4 closing comment tells
-@ch-arslanahmad they will get a review "in days, not months" if they contribute
-again. Honour that if they turn up.
+**One live item, waiting on someone else:** the `manual-setup` badge on the
+marketplace listing. Asked @ryanrhughes what criterion lifts it (comment
+5407659947). The badge is ACCURATE, not a docs gap — the widget fronts an AUR
+package and cannot work from `omarchy plugin add` alone. "It stays for anything
+depending on a distro package" is a fine answer. **Do not chase it.**
 
-**Machine state — the user is in PALO ALTO, pinned.** `auto_update = false`,
-set deliberately as the workaround for the v0.4.2 bug and still correct. IP
-geolocation from this connection reports San Diego, ~694 km off; do NOT "fix"
-the config to match it. Earlier note (superseded): the user was in New York.
-Historical: Auto-relocate moved them on
-2026-09-03 and handled it end to end: config NYC/US, method auto-resolved
-`Makkah` -> `ISNA`, tz `-14400`, cache re-keyed, timers rearmed in EDT. **Do
-not "restore" Riyadh, and do not compare the config against
-`config.toml.bak.pre-audio-enable` — that backup predates the move.** Bar on the
-`full` preset, Latin names, `[audio].enabled = false` per
-[[project-adhan-muted-default]].
+**One promise owed:** PR #4's closing comment tells @ch-arslanahmad he gets a
+review "in days, not months" if he contributes again. He replied on 2026-09-05
+(gracious, wanted nothing) and was thanked. Honour the promise if he returns.
 
-Two hazards that bit this session, both now in memory — read them before any
-verification step that writes or schedules:
-[[feedback-no-adhoc-scripts-against-live-home]] and
-[[feedback-systemd-ignores-home-isolation]]. The second one mis-scheduled a real
-call-to-prayer notification by 75 minutes.
+**Machine state.** The user is in **Palo Alto**, and the location is
+**deliberately pinned** — `auto_update = false`, `[audio].enabled = false`, bar
+on the `full` preset with Latin names. **IP geolocation from this connection
+reports San Diego, ~694 km off, so do NOT "correct" the config to match it**,
+and do not compare against `config.toml.bak.pre-audio-enable` (it predates two
+moves). The location has legitimately changed twice — Riyadh, New York, Palo
+Alto — so never hard-code a city when checking whether the config is intact.
 
-**Version state: CLI 0.4.1, plugin manifest 0.4.0 — deliberately different.**
-No QML or JS changed in 0.4.1, so the plugin repo was not touched and the
-marketplace's verified snapshot is not churned. The rule is in
-[[reference-published-locations]]: bump the manifest only when the widget's code
-actually changes. 0.4.0 bumped it (Model.js gained `{icon}`); 0.3.4 and 0.4.1
-correctly did not.
+**Before any verification step, read these two.** Both bit this session:
+[[feedback-systemd-ignores-home-isolation]] (running the schedule binary rearms
+the user's REAL timers even under an isolated HOME — it mis-scheduled a live
+call-to-prayer by 75 minutes) and
+[[feedback-no-adhoc-scripts-against-live-home]].
 
-**Every release from here goes through `RELEASING.md`** — a functional check and
-a security check, both before the tag is pushed, no exceptions. v0.4.0 is the
-case study for why: see the v0.4.1 section.
+**Versions: CLI 0.4.2, plugin manifest 0.4.0 — deliberately different.** No QML
+or JS has changed since 0.4.0, so the plugin repo is untouched and the
+marketplace's verified snapshot is not churned. Rule in
+[[reference-published-locations]].
+
+**Every release goes through `RELEASING.md`** — a functional check and a
+security check, both before the tag is pushed, no exceptions. The v0.4.0-through-
+v0.4.2 sections are the case studies for why: the security gate found real
+problems every single time it ran, including three in remediation that had
+already passed a green test suite.
 
 ---
 
