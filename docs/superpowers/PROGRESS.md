@@ -111,13 +111,23 @@ depending on a distro package" is a fine answer. **Do not chase it.**
 review "in days, not months" if he contributes again. He replied on 2026-09-05
 (gracious, wanted nothing) and was thanked. Honour the promise if he returns.
 
-**Machine state.** The user is in **Palo Alto**, and the location is
-**deliberately pinned** — `auto_update = false`, `[audio].enabled = false`, bar
-on the `full` preset with Latin names. **IP geolocation from this connection
-reports San Diego, ~694 km off, so do NOT "correct" the config to match it**,
-and do not compare against `config.toml.bak.pre-audio-enable` (it predates two
-moves). The location has legitimately changed twice — Riyadh, New York, Palo
-Alto — so never hard-code a city when checking whether the config is intact.
+**Machine state.** The user is in **Riyadh** (since ~2026-09-17), `auto_update
+= true`, `[audio].enabled = false`, bar on the `full` preset with Latin names.
+The Palo Alto pin from 2026-09-06 was lifted with `relocate --auto` on
+2026-09-17 after the user came home and the app stayed stuck on Palo Alto for
+eleven days — see "Open design flaw" below. The location has changed three
+times (Riyadh, New York, Palo Alto, Riyadh); never hard-code a city when
+checking whether the config is intact.
+
+**Open design flaw, not yet fixed — a pin is silent when the user moves.**
+`auto_update = false` means the app stops following the IP, which is the point;
+but nothing tells the user when they have clearly moved anyway. The strong
+signal is the SYSTEM TIMEZONE: it is set by the user/OS, not by a flaky
+geolocation provider, so a country-level disagreement between `/etc/localtime`
+and a pinned location is near-certain proof of travel. Proposed: on each
+schedule run, if pinned and `TzLocation.detect[:countries]` excludes the pinned
+country, emit a notification naming both and the `relocate --auto` command. Do
+not auto-unpin — the user chose the pin — just stop being quiet about it.
 
 **Before any verification step, read these two.** Both bit this session:
 [[feedback-systemd-ignores-home-isolation]] (running the schedule binary rearms
