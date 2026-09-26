@@ -94,69 +94,41 @@ notifications are dead; (2) the IPC invocation is
 
 ## START HERE next session
 
-> **Rewrite this section, do not append to it.** It has drifted three times by
-> accumulating struck-through items and superseded machine state. It answers one
-> question — what should the next session do, and what is true right now.
-> Everything historical belongs in the dated sections below.
+> **Rewrite this section, do not append to it.** It answers one question — what
+> should the next session do, and what is true right now. History belongs in the
+> dated sections below.
 
-**v0.4.2 is shipped and every repo is clean and pushed.** One thing is in
-flight: marketplace verification issue #8850, awaiting a maintainer — see below.
+**v0.4.3 is shipped. Every repo is clean and pushed, CI is green on master.**
 
-**Live item 1 — marketplace re-verification, and it is OUR job, not a
-maintainer's.** Pushing a commit to the plugin repo invalidates the listing's
-verified snapshot, and the listing then shows **"Update unverified"** to every
-visitor until the contributor submits the new commit through the
-verify-plugin form. Nobody re-verifies it for us. It sat unverified for three
-weeks after the 0.4.0 widget bump before anyone noticed. Filed
-`omacom/omarchy-plugin-marketplace#8850` on 2026-09-26 for commit `92fca28`.
-**Whenever the plugin repo is pushed, file that form in the same pass.** It is
-step 7 in `RELEASING.md` now, not a thing to remember.
+**In flight — marketplace re-verification, `omacom/omarchy-plugin-marketplace#8850`**
+(filed 2026-09-26, commit `92fca28`, the 0.4.0 widget). Their bot has already
+labelled it `validated`, `plugin-update`, `security-review-required`; it waits
+on a human. Nothing to do unless it stalls — a short nudge on the issue after a
+week or so is reasonable. Until it lands the listing shows "Update unverified".
+Remember this is OUR job after every plugin push (step 8 in `RELEASING.md`).
 
-**Live item 2 — the `manual-setup` badge on the marketplace listing.** Asked @ryanrhughes what criterion lifts it (comment
-5407659947). The badge is ACCURATE, not a docs gap — the widget fronts an AUR
-package and cannot work from `omarchy plugin add` alone. "It stays for anything
-depending on a distro package" is a fine answer. **Do not chase it.**
+**Waiting on someone else, do not chase:** @ryanrhughes on what lifts the
+`manual-setup` badge (comment 5407659947). The badge is accurate.
 
-**One promise owed:** PR #4's closing comment tells @ch-arslanahmad he gets a
-review "in days, not months" if he contributes again. He replied on 2026-09-05
-(gracious, wanted nothing) and was thanked. Honour the promise if he returns.
+**Promise owed:** @ch-arslanahmad gets a review "in days, not months" if he
+contributes again (PR #4).
 
-**Machine state.** The user is in **Riyadh** (since ~2026-09-17), `auto_update
-= true`, `[audio].enabled = false`, bar on the `full` preset with Latin names.
-The Palo Alto pin from 2026-09-06 was lifted with `relocate --auto` on
-2026-09-17 after the user came home and the app stayed stuck on Palo Alto for
-eleven days — see "Open design flaw" below. The location has changed three
-times (Riyadh, New York, Palo Alto, Riyadh); never hard-code a city when
-checking whether the config is intact.
+**Machine state.** User is in **Riyadh**, `auto_update = true`,
+`[audio].enabled = false`, bar `full` preset, Latin names. The location has
+legitimately changed three times (Riyadh → New York → Palo Alto → Riyadh), so
+never hard-code a city when checking the config — read it here.
 
-**That design flaw is fixed in v0.4.3.**
+**Before any verification step:** [[feedback-systemd-ignores-home-isolation]]
+(the schedule binary rearms the user's REAL timers even under an isolated HOME)
+and [[feedback-no-adhoc-scripts-against-live-home]]. After a mise Ruby upgrade,
+`bundle install` again; the installed app is unaffected (pinned `/usr/bin/ruby`).
 
-**Before any verification step, read these two.** Both bit this session:
-[[feedback-systemd-ignores-home-isolation]] (running the schedule binary rearms
-the user's REAL timers even under an isolated HOME — it mis-scheduled a live
-call-to-prayer by 75 minutes) and
-[[feedback-no-adhoc-scripts-against-live-home]].
+**Versions: CLI 0.4.3, plugin manifest 0.4.0 — deliberately different.** No QML
+or JS has changed since 0.4.0. Rule in [[reference-published-locations]].
 
-**Versions: CLI 0.4.2, plugin manifest 0.4.0 — deliberately different.** No QML
-or JS has changed since 0.4.0, so the plugin repo is untouched and the
-marketplace's verified snapshot is not churned. Rule in
-[[reference-published-locations]].
-
-**Dev-environment note (2026-09-26):** mise upgraded the default Ruby to 4.0.7,
-which orphaned the project's bundle — `bundle exec` and a bare
-`ruby -e 'require "tomlrb"'` both failed until `bundle install` was re-run.
-**The installed app was never affected**: `/usr/bin/omarchy-prayer` carries the
-pinned `#!/usr/bin/ruby` shebang from the 0.1.1-2 fix, so it runs on system Ruby
-3.4.10 where the gems live. If a `ruby -e` check suddenly cannot find `tomlrb`,
-that is mise, not the package — use `/usr/bin/ruby` or re-run `bundle install`.
-The suite passes on Ruby 4.0.7 as well as 3.4.10, which is useful forward-compat
-evidence for when Arch bumps.
-
-**Every release goes through `RELEASING.md`** — a functional check and a
-security check, both before the tag is pushed, no exceptions. The v0.4.0-through-
-v0.4.2 sections are the case studies for why: the security gate found real
-problems every single time it ran, including three in remediation that had
-already passed a green test suite.
+**Every release goes through `RELEASING.md`** — functional and security gates,
+**CI green on a PR before merge**, then re-verify the marketplace if the plugin
+repo was pushed. The v0.4.x sections below are the case studies for why.
 
 ---
 
