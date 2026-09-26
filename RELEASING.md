@@ -40,7 +40,13 @@ omarchy-shell -q io.github.mrcode.prayer-times refresh
 # 5. The user's own config must be untouched by all of the above
 sha256sum ~/.config/omarchy-prayer/config.toml   # compare before/after
 
-# 6. Read `git status` before committing. `git add -A` sweeps up scratch files,
+# 6. CI green on a PR BEFORE merging. The repo has had a GitHub Actions matrix
+#    (Ruby 3.2/3.3/3.4) since April, and it was RED on every push for five
+#    months without anyone looking — the failing tests passed locally because
+#    of a host-specific fallback. A green local suite is not a green CI.
+gh pr checks <n> --repo mrCode/omarchy-prayer
+
+# 7. Read `git status` before committing. `git add -A` sweeps up scratch files,
 #    and a release commit is the worst place to discover that — the tag is
 #    immutable and its tarball is what the AUR checksums, so anything that
 #    lands in it ships. (v0.4.2 shipped a stray bug-report markdown this way.)
