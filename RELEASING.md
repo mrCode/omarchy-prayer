@@ -102,4 +102,16 @@ and caps length. It does **not** escape `&`.
    page advertising v0.1.5 as "Latest" for four months while 0.3.x shipped.
 5. AUR: bump `pkgver`, `updpkgsums`, regenerate `.SRCINFO`, push.
 6. Sync and tag the plugin repo if step 2 applied.
-7. Update `docs/superpowers/PROGRESS.md` in the same pass.
+7. **If you pushed the plugin repo, re-verify the marketplace listing in the
+   same pass.** Pushing any commit there invalidates the verified snapshot, and
+   the listing shows **"Update unverified"** to every visitor until *you* submit
+   the new commit — no maintainer does it for you. The 0.4.0 bump sat unverified
+   for three weeks.
+
+   File <https://github.com/omacom/omarchy-plugin-marketplace/issues/new?template=verify-plugin.yml>
+   with action "Verify and publish a newer upstream commit", the plugin ID, the
+   repo URL, and the **full 40-character** HEAD SHA. Leave the "standard
+   installation" box unchecked — this widget genuinely requires the AUR package,
+   so `manual-setup` is accurate and ticking it would misrepresent the plugin.
+   Metadata comes from the issue BODY, so every form heading must be present.
+8. Update `docs/superpowers/PROGRESS.md` in the same pass.

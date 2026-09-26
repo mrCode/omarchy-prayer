@@ -99,7 +99,8 @@ notifications are dead; (2) the IPC invocation is
 > question — what should the next session do, and what is true right now.
 > Everything historical belongs in the dated sections below.
 
-**v0.4.2 is shipped. Every repo is clean and pushed. Nothing is in flight.**
+**v0.4.2 is shipped and every repo is clean and pushed.** One thing is in
+flight: marketplace verification issue #8850, awaiting a maintainer — see below.
 
 **Live item 1 — marketplace re-verification, and it is OUR job, not a
 maintainer's.** Pushing a commit to the plugin repo invalidates the listing's
@@ -108,8 +109,8 @@ visitor until the contributor submits the new commit through the
 verify-plugin form. Nobody re-verifies it for us. It sat unverified for three
 weeks after the 0.4.0 widget bump before anyone noticed. Filed
 `omacom/omarchy-plugin-marketplace#8850` on 2026-09-26 for commit `92fca28`.
-**Whenever the plugin repo is pushed, file that form in the same pass** — add it
-to the release steps mentally alongside tagging.
+**Whenever the plugin repo is pushed, file that form in the same pass.** It is
+step 7 in `RELEASING.md` now, not a thing to remember.
 
 **Live item 2 — the `manual-setup` badge on the marketplace listing.** Asked @ryanrhughes what criterion lifts it (comment
 5407659947). The badge is ACCURATE, not a docs gap — the widget fronts an AUR
