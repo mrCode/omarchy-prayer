@@ -26,6 +26,12 @@ module TestHelper
   # Put a temp dir at the front of PATH holding log-only shims for commands.
   # The shim writes "<name>\t<argv joined by \t>\n" to $OP_SHIM_LOG.
   #
+  # The shebang is ABSOLUTE on purpose. `#!/usr/bin/env bash` needs to find
+  # bash on PATH, and tests that simulate a missing binary strip PATH down to
+  # this shim directory alone — so the shim silently failed to execute. It went
+  # unnoticed for months because the code under test had a second fallback that
+  # happened to be true on the developer's machine and false in CI.
+  #
   # `delays` makes a named shim BLOCK for N seconds after logging, so a test can
   # observe what the caller does while a synchronous command is still running.
   # The sleep is baked into the generated script rather than passed by env var,
@@ -39,7 +45,7 @@ module TestHelper
     names.each do |name|
       path = File.join(shim_dir, name)
       File.write(path, <<~SH)
-        #!/usr/bin/env bash
+        #!/bin/bash
         line="#{name}"
         for a in "$@"; do line="$line"$'\t'"$a"; done
         # ONE append. Separate printf >> calls interleave when shims run

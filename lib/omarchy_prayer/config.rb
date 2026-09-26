@@ -51,6 +51,14 @@ module OmarchyPrayer
       @raw['location'].fetch('auto_update', true)
     end
 
+    # Whether a pinned location should warn when the system timezone moves to
+    # another country. On by default: the alternative is what actually happened
+    # — a pin sat on the wrong city for eleven days in silence. Off for the one
+    # legitimate case, someone deliberately running a non-local timezone.
+    def warn_timezone_mismatch?
+      @raw['location'].fetch('warn_timezone_mismatch', true) != false
+    end
+
     def method_name; @raw['method']['name']; end
 
     def offsets

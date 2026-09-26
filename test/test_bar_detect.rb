@@ -4,6 +4,12 @@ require 'omarchy_prayer/bar_detect'
 class TestBarDetect < Minitest::Test
   include TestHelper
 
+  # No machine has this. Passing it everywhere means these tests exercise the
+  # `omarchy-shell shell ping` path and nothing else — with the real
+  # /usr/share/omarchy/shell they passed on a developer box while the shim was
+  # broken, and failed in CI for months.
+  ABSENT = '/nonexistent/omarchy/shell'.freeze
+
   # Strip system PATH so the real /usr/bin/omarchy-shell on this machine can't
   # leak into tests that are meant to simulate its absence.
   def isolate_path(home)
@@ -25,7 +31,7 @@ class TestBarDetect < Minitest::Test
   def test_none_when_no_bar_present
     with_isolated_home do |home|
       isolate_path(home)
-      assert_equal :none, OmarchyPrayer::BarDetect.detect
+      assert_equal :none, OmarchyPrayer::BarDetect.detect(package_dir: ABSENT)
     end
   end
 
@@ -33,14 +39,14 @@ class TestBarDetect < Minitest::Test
     with_isolated_home do |home|
       isolate_path(home)
       write_waybar_config(home)
-      assert_equal :waybar, OmarchyPrayer::BarDetect.detect
+      assert_equal :waybar, OmarchyPrayer::BarDetect.detect(package_dir: ABSENT)
     end
   end
 
   def test_quickshell_when_shell_pings_ok
     with_isolated_home do |home|
       shim_shell(home, 'ok')
-      assert_equal :quickshell, OmarchyPrayer::BarDetect.detect
+      assert_equal :quickshell, OmarchyPrayer::BarDetect.detect(package_dir: ABSENT)
     ensure
       ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
     end
@@ -50,7 +56,7 @@ class TestBarDetect < Minitest::Test
     with_isolated_home do |home|
       shim_shell(home, 'ok')
       write_waybar_config(home)
-      assert_equal :quickshell, OmarchyPrayer::BarDetect.detect,
+      assert_equal :quickshell, OmarchyPrayer::BarDetect.detect(package_dir: ABSENT),
                    'the live bar is the correct target, not the leftover'
     ensure
       ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
@@ -62,7 +68,7 @@ class TestBarDetect < Minitest::Test
       shim_shell(home, 'ok')
       refute File.exist?("#{home}/.config/omarchy/shell.json"),
              'a stock Omarchy 4 install may never have written shell.json'
-      assert_equal :quickshell, OmarchyPrayer::BarDetect.detect
+      assert_equal :quickshell, OmarchyPrayer::BarDetect.detect(package_dir: ABSENT)
     ensure
       ENV.delete('OP_SHIM_STDOUT_OMARCHY_SHELL')
     end
