@@ -1,12 +1,12 @@
-# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.2)
+# PROGRESS — Omarchy 4 support (v0.2.0 → v0.4.3)
 
 > Living state file. **Read this first** in any new session before acting.
 > Update it in the same turn a decision is made or a task completes.
 
 **Last updated:** 2026-09-03
 **Branch:** `master` (release commits land directly; no feature branch open)
-**Status:** **v0.4.2 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.2` (all with
-Releases); AUR `omarchy-prayer 0.4.2-1`; installed locally and verified through PATH; plugin
+**Status:** **v0.4.3 SHIPPED.** GitHub tags `v0.2.0`–`v0.4.3` (all with
+Releases); AUR `omarchy-prayer 0.4.3-1`; installed locally and verified through PATH; plugin
 published on the community plugin marketplace.
 Suite: **278 runs, 886–888 assertions, 0 failures, 1 skip** — green under both
 `bundle exec rake test` and the bundler-less `ruby -Ilib -Itest` invocation
@@ -129,15 +129,7 @@ eleven days — see "Open design flaw" below. The location has changed three
 times (Riyadh, New York, Palo Alto, Riyadh); never hard-code a city when
 checking whether the config is intact.
 
-**Open design flaw, not yet fixed — a pin is silent when the user moves.**
-`auto_update = false` means the app stops following the IP, which is the point;
-but nothing tells the user when they have clearly moved anyway. The strong
-signal is the SYSTEM TIMEZONE: it is set by the user/OS, not by a flaky
-geolocation provider, so a country-level disagreement between `/etc/localtime`
-and a pinned location is near-certain proof of travel. Proposed: on each
-schedule run, if pinned and `TzLocation.detect[:countries]` excludes the pinned
-country, emit a notification naming both and the `relocate --auto` command. Do
-not auto-unpin — the user chose the pin — just stop being quiet about it.
+**That design flaw is fixed in v0.4.3.**
 
 **Before any verification step, read these two.** Both bit this session:
 [[feedback-systemd-ignores-home-isolation]] (running the schedule binary rearms
