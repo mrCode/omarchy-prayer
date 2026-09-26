@@ -150,6 +150,16 @@ or JS has changed since 0.4.0, so the plugin repo is untouched and the
 marketplace's verified snapshot is not churned. Rule in
 [[reference-published-locations]].
 
+**Dev-environment note (2026-09-26):** mise upgraded the default Ruby to 4.0.7,
+which orphaned the project's bundle — `bundle exec` and a bare
+`ruby -e 'require "tomlrb"'` both failed until `bundle install` was re-run.
+**The installed app was never affected**: `/usr/bin/omarchy-prayer` carries the
+pinned `#!/usr/bin/ruby` shebang from the 0.1.1-2 fix, so it runs on system Ruby
+3.4.10 where the gems live. If a `ruby -e` check suddenly cannot find `tomlrb`,
+that is mise, not the package — use `/usr/bin/ruby` or re-run `bundle install`.
+The suite passes on Ruby 4.0.7 as well as 3.4.10, which is useful forward-compat
+evidence for when Arch bumps.
+
 **Every release goes through `RELEASING.md`** — a functional check and a
 security check, both before the tag is pushed, no exceptions. The v0.4.0-through-
 v0.4.2 sections are the case studies for why: the security gate found real
