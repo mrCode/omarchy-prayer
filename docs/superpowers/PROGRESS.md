@@ -101,8 +101,17 @@ notifications are dead; (2) the IPC invocation is
 
 **v0.4.2 is shipped. Every repo is clean and pushed. Nothing is in flight.**
 
-**One live item, waiting on someone else:** the `manual-setup` badge on the
-marketplace listing. Asked @ryanrhughes what criterion lifts it (comment
+**Live item 1 — marketplace re-verification, and it is OUR job, not a
+maintainer's.** Pushing a commit to the plugin repo invalidates the listing's
+verified snapshot, and the listing then shows **"Update unverified"** to every
+visitor until the contributor submits the new commit through the
+verify-plugin form. Nobody re-verifies it for us. It sat unverified for three
+weeks after the 0.4.0 widget bump before anyone noticed. Filed
+`omacom/omarchy-plugin-marketplace#8850` on 2026-09-26 for commit `92fca28`.
+**Whenever the plugin repo is pushed, file that form in the same pass** — add it
+to the release steps mentally alongside tagging.
+
+**Live item 2 — the `manual-setup` badge on the marketplace listing.** Asked @ryanrhughes what criterion lifts it (comment
 5407659947). The badge is ACCURATE, not a docs gap — the widget fronts an AUR
 package and cannot work from `omarchy plugin add` alone. "It stays for anything
 depending on a distro package" is a fine answer. **Do not chase it.**
@@ -484,7 +493,9 @@ publication is out of scope, see task-10-report.md):**
 
 ## Marketplace listing
 
-- Directory: <https://omarchyplugins.com/> (community, HANCORE-linux/omarchy-plugin-marketplace)
+- Directory: <https://plugins.omarchy.org/> (community, `omacom/omarchy-plugin-marketplace`).
+  Moved from `omarchyplugins.com` / `HANCORE-linux` around Sep 2026; the old
+  domain still 301-redirects, and issue #456 moved with the repo.
 - Standalone plugin repo: <https://github.com/mrCode/omarchy-prayer-plugin>
   — manifest/README/LICENSE plus `preview.png` at the **repo root**, as the
   marketplace requires. This repo stays the source of truth; publish with
