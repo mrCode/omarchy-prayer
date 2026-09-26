@@ -52,7 +52,16 @@ module OmarchyPrayer
         o.on('--lat F', Float)    { |v| opts[:latitude]  = v }
         o.on('--lon F', Float)    { |v| opts[:longitude] = v }
         o.on('--city CITY')       { |v| opts[:city]      = v }
-        o.on('--country CODE')    { |v| opts[:country]   = v }
+        o.on('--country CODE') do |v|
+          # Two letters, ISO 3166-1 alpha-2. Unvalidated, `--country "Saudi
+          # Arabia"` was written verbatim: CountryMethods then silently fell
+          # back to MWL instead of Makkah, and the stale-pin check compared
+          # "SAUDI ARABIA" against ["SA"] and warned every day forever.
+          unless v.to_s.match?(/\A[A-Za-z]{2}\z/)
+            abort "#{USAGE}\n  --country takes a two-letter ISO code (SA, US, GB), not #{v.inspect}"
+          end
+          opts[:country] = v.upcase
+        end
         o.on('--auto', 'resume automatic location tracking') { opts[:auto] = true }
       end.parse(argv)
       opts

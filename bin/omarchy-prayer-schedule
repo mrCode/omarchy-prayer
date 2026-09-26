@@ -25,8 +25,12 @@ OmarchyPrayer::FirstRun.ensure_config!
 OmarchyPrayer::Migrations.run
 begin
   cfg = OmarchyPrayer::Config.load
-  if cfg.auto_update? && OmarchyPrayer::AutoRelocate.maybe_update(cfg)
-    cfg = OmarchyPrayer::Config.load
+  if cfg.auto_update?
+    cfg = OmarchyPrayer::Config.load if OmarchyPrayer::AutoRelocate.maybe_update(cfg)
+  else
+    # Pinned. Do not follow the IP — but do not go silent either if the system
+    # timezone says the user has left the country they pinned.
+    OmarchyPrayer::AutoRelocate.warn_stale_pin(cfg)
   end
   method = resolve_method(cfg)
   date   = Date.today

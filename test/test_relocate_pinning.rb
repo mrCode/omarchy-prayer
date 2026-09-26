@@ -150,6 +150,33 @@ class TestRelocatePinning < Minitest::Test
     end
   end
 
+  # An unvalidated --country was written verbatim: CountryMethods then fell back
+  # to MWL instead of the right method, and the stale-pin check compared
+  # "SAUDI ARABIA" against ["SA"] and warned daily forever.
+  def test_country_must_be_a_two_letter_code
+    with_isolated_home do
+      seed
+      before = File.read(OmarchyPrayer::Paths.config_file)
+      err = assert_raises(SystemExit) do
+        OmarchyPrayer::Relocate.run(
+          ['--lat','24.7','--lon','46.7','--city','Riyadh','--country','Saudi Arabia'],
+          geolocate: FAR_AWAY, io: StringIO.new
+        )
+      end
+      refute_equal 0, err.status
+      assert_equal before, File.read(OmarchyPrayer::Paths.config_file)
+    end
+  end
+
+  def test_country_is_upcased
+    with_isolated_home do
+      seed
+      OmarchyPrayer::Relocate.run(%w[--lat 24.7 --lon 46.7 --city Riyadh --country sa],
+                                  geolocate: FAR_AWAY, io: StringIO.new)
+      assert_equal 'SA', loc['country']
+    end
+  end
+
   # ---- from the v0.4.2 security review ----------------------------------
 
   # `[location]  # my home` is valid TOML. A writer that does not accept the

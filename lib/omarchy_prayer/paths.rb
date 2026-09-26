@@ -26,6 +26,9 @@ module OmarchyPrayer
     def month_cache(ym); File.join(state_dir,  "times-#{ym}.json");              end
     def adhan_pid;       File.join(state_dir,  'current-adhan.pid');             end
     def mute_today;      File.join(state_dir,  'mute-today');                    end
+    # Remembers the last stale-pin warning so the scheduler's many daily runs
+    # (00:01, resume, every network-up) produce one notification, not a stream.
+    def pin_mismatch_marker; File.join(state_dir, 'pin-mismatch');                end
 
     def ensure_config_dir; FileUtils.mkdir_p(config_dir); config_dir; end
     def ensure_state_dir;  FileUtils.mkdir_p(state_dir);  state_dir;  end

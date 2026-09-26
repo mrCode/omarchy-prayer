@@ -11,8 +11,8 @@ module OmarchyPrayer
 
     module_function
 
-    def detect
-      return :quickshell if quickshell?
+    def detect(package_dir: SHELL_PACKAGE_DIR)
+      return :quickshell if quickshell?(package_dir: package_dir)
       return :waybar     if waybar_config_path
       :none
     end
@@ -21,13 +21,17 @@ module OmarchyPrayer
     # optional, since the shell falls back to packaged defaults when the user
     # has never customised their bar. Keying on it would misdetect a stock
     # Omarchy 4 install as having no bar at all.
-    def quickshell?
+    # `package_dir` is injectable so a test can prove the PING path works on its
+    # own. With it hardcoded, any machine that has the shell package installed
+    # returns true from the fallback and a broken ping goes unnoticed — which is
+    # exactly what happened.
+    def quickshell?(package_dir: SHELL_PACKAGE_DIR)
       return false unless which('omarchy-shell')
       return true if `omarchy-shell shell ping 2>/dev/null`.strip == 'ok'
 
       # Shell installed but not running — e.g. setup invoked over SSH or from
       # a package hook.
-      Dir.exist?(SHELL_PACKAGE_DIR)
+      Dir.exist?(package_dir)
     rescue StandardError
       false
     end

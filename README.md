@@ -235,6 +235,8 @@ omarchy-prayer relocate --auto                                     # resume auto
 
 **A manual override pins your location.** Passing `--lat/--lon/--city/--country` also sets `auto_update = false`, and says so, because otherwise the very scheduler run that `relocate` launches would re-detect by IP and overwrite the coordinates you just set. Use `omarchy-prayer relocate --auto` to resume automatic tracking.
 
+**A pin will tell you when it looks stale.** While pinned, the app stops following your IP — but if your system timezone moves to a different country than the one you pinned, it notifies you once a day that prayer times are still being calculated for the pinned city, and how to resume tracking. It never unpins by itself. The timezone is used rather than your IP because it is set by you or your OS, so a country-level disagreement is real evidence of travel, while IP geolocation can be hundreds of kilometres wrong without you going anywhere.
+
 Location detection cross-checks IP geolocation against your system timezone (`/etc/localtime`). If you're roaming through a foreign carrier or behind a VPN that places your IP in a different country, the system timezone takes precedence — so `omarchy-prayer` won't auto-relocate you to the carrier's country. Note this compares **countries**: it will not catch a bad IP result that lands hundreds of kilometres away inside the same country, which does happen — pin your location manually if your provider misplaces you. To override manually:
 
 ```bash
