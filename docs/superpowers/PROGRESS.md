@@ -98,14 +98,23 @@ notifications are dead; (2) the IPC invocation is
 > should the next session do, and what is true right now. History belongs in the
 > dated sections below.
 
-**v0.4.3 is shipped. Every repo is clean and pushed, CI is green on master.**
+**v0.4.3 is shipped. Every repo is clean and pushed, CI is green on master.** Last full health check: 2026-11-06.
 
-**In flight — marketplace re-verification, `omacom/omarchy-plugin-marketplace#8850`**
-(filed 2026-09-26, commit `92fca28`, the 0.4.0 widget). Their bot has already
-labelled it `validated`, `plugin-update`, `security-review-required`; it waits
-on a human. Nothing to do unless it stalls — a short nudge on the issue after a
-week or so is reasonable. Until it lands the listing shows "Update unverified".
-Remember this is OUR job after every plugin push (step 8 in `RELEASING.md`).
+**Nothing in flight.** Marketplace re-verification #8850 was approved by the
+maintainer on 2026-09-27 (`approved-and-verified`); the listing is verified at
+`92fca28`, the current plugin HEAD. Remember re-verification is OUR job after
+every plugin push (step 8 in `RELEASING.md`).
+
+**Platform check, 2026-11-06 — compatible, nothing to change.** Omarchy moved
+4.0.0 → 4.5.0 and Quickshell to 0.3.2; app, widget, IPC, scheduling and the
+plugin validator all pass, no QML errors. Two journal warnings name our plugin
+and are NOT ours to fix: (1) "Module path ... is outside of the config folder"
+fires identically for every installed plugin since the Quickshell 0.3.2 upgrade
+on 2026-10-21 — it is about where Omarchy keeps plugins; (2) "Handler was
+registered but will not be used because another handler is registered" comes
+from two monitors: one widget instance per screen, one IpcHandler wins. That is
+fine — its `refresh` calls `broadcast()`, and Omarchy's `Bar.moduleWidgets`
+walks every screen's widget hosts, so both pills refresh. Do not "fix" it.
 
 **Waiting on someone else, do not chase:** @ryanrhughes on what lifts the
 `manual-setup` badge (comment 5407659947). The badge is accurate.
