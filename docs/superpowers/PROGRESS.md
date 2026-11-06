@@ -116,6 +116,14 @@ from two monitors: one widget instance per screen, one IpcHandler wins. That is
 fine — its `refresh` calls `broadcast()`, and Omarchy's `Bar.moduleWidgets`
 walks every screen's widget hosts, so both pills refresh. Do not "fix" it.
 
+**User reports, swept 2026-11-06 — none open, none new.** GitHub (both repos,
+open AND closed), PRs from others, AUR comments, marketplace issues. The only
+report ever is #1 (April, fixed in 0.1.1-2, closed). Read the silence
+carefully: AUR shows 0 votes / 0.00 popularity, so it more likely means few
+users than happy ones — every 0.4.x bug was found by us or a reviewer. New on
+the marketplace: **#14035 "Salat Times"** (@Abdelhakim-Baalla, listed
+2026-11-05) is a *separate* prayer-times plugin, not a report about ours.
+
 **Waiting on someone else, do not chase:** @ryanrhughes on what lifts the
 `manual-setup` badge (comment 5407659947). The badge is accurate.
 
